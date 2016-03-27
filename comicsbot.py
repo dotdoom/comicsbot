@@ -43,28 +43,26 @@ class MUCJabberBot(JabberBot):
         return super(MUCJabberBot, self).join_room(chatroom, nickname)
 
     def build_reply(self, msg, text, private=False):
-        # Prepent text with sender's nickname if in a groupchat
+        # Prepend text with sender's nickname if in a groupchat
         if not private:
             text = "%s: %s" % (msg.getFrom().getResource(), text)
         return super(MUCJabberBot, self).build_reply(msg, text, private)
 
-    SINGLE_TEXT_BLOB_LIMIT = 20000
-    TEXT_TO_BE_CONTINUED = ' [...]'
-    TEXT_WAIT_CHUNK_SECONDS = 5
+    TEXT_LIMIT_PER_MESSAGE = 1000
+    TEXT_LIMIT_SUFFIX = ' [...]'
+    TEXT_LIMIT_WAIT_SECONDS = 5
 
     def send(self, user, text, in_reply_to=None, message_type='chat'):
-        if text and len(text) > self.SINGLE_TEXT_BLOB_LIMIT:
-            while 1:
+        if text:
+            while len(text) > self.TEXT_LIMIT_PER_MESSAGE:
                 chunk = (
-                        text[:self.SINGLE_TEXT_BLOB_LIMIT-
-                            len(self.TEXT_TO_BE_CONTINUED)] +
-                        TEXT_TO_BE_CONTINUED)
+                        text[:self.TEXT_LIMIT_PER_MESSAGE -
+                            len(self.TEXT_LIMIT_SUFFIX)] +
+                        self.TEXT_LIMIT_SUFFIX)
                 text = text[len(chunk):]
                 super(MUCJabberBot, self).send(user, chunk, in_reply_to,
                         message_type)
-                time.sleep(self.TEXT_WAIT_CHUNK_SECONDS)
-                if len(text) <= self.SINGLE_TEXT_BLOB_LIMIT:
-                    break
+                time.sleep(self.TEXT_LIMIT_WAIT_SECONDS)
         return super(MUCJabberBot, self).send(user, text, in_reply_to,
                 message_type)
 
@@ -96,21 +94,20 @@ def wikicmd(func):
     decorated.__doc__ = func.__doc__
     return decorated
 
+TIME_SPAN_SUFFIXES = {
+    "s": 1,
+    "m": 60,
+    "h": 60 * 60,
+    "d": 60 * 60 * 24,
+    "w": 60 * 60 * 24 * 7,
+}
+
 def ParseTimeSpanToSeconds(s, default=None):
-    if s.endswith("s"):
-        return int(s[:-1])
-    elif s.endswith("m"):
-        return int(s[:-1]) * 60
-    elif s.endswith("h"):
-        return int(s[:-1]) * 60 * 60
-    elif s.endswith("d"):
-        return int(s[:-1]) * 60 * 60 * 24
-    elif s.endswith("w"):
-        return int(s[:-1]) * 60 * 60 * 24 * 7
-    elif s:
-        return int(s)
-    else:
+    if not s:
         return default
+    if any(s.endswith(prefix) for prefix in TIME_SPAN_SUFFIXES):
+        return float(s[:-1]) * TIME_SPAN_SUFFIXES[s[-1]]
+    return float(s)
 
 class ComicsBot(MUCJabberBot):
 
