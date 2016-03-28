@@ -12,6 +12,8 @@ class MUCJabberBot(JabberBot):
     def __init__(self, *args, **kwargs):
         self.room_nicknames = {}
         self.prefix = "!"
+        self.room_logger = kwargs["room_logger"]
+        del kwargs["room_logger"]
         super(MUCJabberBot, self).__init__(*args, **kwargs)
 
     def callback_message(self, conn, msg):
@@ -23,6 +25,12 @@ class MUCJabberBot(JabberBot):
         message = msg.getBody()
         if not message:
             return
+
+        if (msg.getFrom().getStripped() in self.room_nicknames and
+                msg.getType() == 'groupchat'):
+            # One logger for all rooms, oh no!
+            self.room_logger.writeMessage(msg.getFrom().getResource(),
+                    message)
 
         if message.startswith(self.prefix):
             msg.setBody(message[len(self.prefix):])
@@ -36,6 +44,20 @@ class MUCJabberBot(JabberBot):
                 else:
                     return
         return super(MUCJabberBot, self).callback_message(conn, msg)
+
+    def callback_presence(self, conn, pr):
+        if pr.getFrom().getStripped() in self.room_nicknames:
+            if pr.getType() == 'unavailable':
+                text = "left the room"
+            elif pr.getType() is None:
+                text = "is online"
+            else:
+                text = "is %s"
+            if pr.getStatus() is not None:
+                text += ": " + pr.getStatus()
+            self.room_logger.writeNotification(pr.getFrom().getResource(),
+                    text)
+        return super(MUCJabberBot, self).callback_presence(conn, pr)
 
     def join_room(self, chatroom, nickname, *args, **kwargs):
         # Store nickname in each room to fetch direct replies
@@ -120,8 +142,10 @@ class ComicsBot(MUCJabberBot):
     def recent(self, msg, args):
         """Show recent changes for interval (default=1d)."""
         timespan = ParseTimeSpanToSeconds(args, 24 * 60 * 60)
-        return "\n".join(["%(name)s modified by %(author)s at %(lastModified)s" % page
-            for page in self.wiki.wiki.getRecentChanges(int(time.time() - timespan))])
+        return "\n".join([
+            "%(name)s modified by %(author)s at %(lastModified)s" % page
+            for page in self.wiki.wiki.getRecentChanges(
+                int(time.time() - timespan))])
         #self.send_simple_reply(msg, str(recent_changes))
 
     @wikicmd

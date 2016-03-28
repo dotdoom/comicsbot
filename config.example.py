@@ -4,6 +4,7 @@ config = {
         "password": "secret",
         "room": "doku@conference.example.org",
         "nick": "ComicsBot",
+        "logdir": "/tmp/comics_log",
     },
     "dokuwiki": {
         "username": "another_user",

@@ -4,9 +4,11 @@
 import inspect
 import logging
 logging.basicConfig()
+import uuid
 
 from comicsbot import ComicsBot
 from dokuwiki import DokuWiki
+from roomlogger import RoomLogger
 
 execfile("config.py")
 
@@ -20,8 +22,11 @@ else:
     welcome_message = "Hi! I cannot authorize to the wiki."
     w = None
 
+room_logger = RoomLogger(config["jabber"]["logdir"])
+
 bot = ComicsBot(config["jabber"]["username"],
-        config["jabber"]["password"], debug=True, wiki=w)
+        config["jabber"]["password"], debug=True, wiki=w,
+        room_logger=room_logger, res=uuid.uuid1())
 bot.join_room(config["jabber"]["room"], config["jabber"]["nick"])
 bot.send(config["jabber"]["room"], welcome_message, message_type="groupchat")
 bot.serve_forever()
