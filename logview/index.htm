@@ -39,6 +39,27 @@ Search logs (date or keywords or /regexp/): <input id="search" type="text" />
 <div id="log"></div>
 
 <script type="text/javascript">
+var userColors = [
+	"blue",
+	"brown",
+	"cadetblue",
+	"darkviolet",
+	"fuchsia",
+	"indigo",
+	"lime",
+];
+
+function stringHash(str) {
+	var hash = 0, i, chr, len;
+	if (str.length === 0) return hash;
+	for (i = 0, len = str.length; i < len; i++) {
+	    chr   = str.charCodeAt(i);
+	    hash  = ((hash << 5) - hash) + chr;
+	    hash |= 0; // Convert to 32bit integer
+	}
+	return hash;
+}
+
 function getHash() {
 	var parsed = {};
 	var parts = window.location.hash.slice(1).split("&");
@@ -359,6 +380,8 @@ function textToHTMLConverter(pattern) {
 		node.className = "entry";
 		if (entry.notification) {
 			node.className += " notification";
+		} else {
+			node.style.color = userColors[stringHash("" + entry.user) % userColors.length];
 		}
 		node.onclick = lineClicked;
 
