@@ -3,6 +3,7 @@
 import httplib
 import time
 import traceback
+import urllib
 import xmlrpclib
 
 from jabberbot import JabberBot, botcmd
@@ -151,3 +152,12 @@ class ComicsBot(MUCJabberBot):
     @wikicmd
     def stats(self, msg, args):
         return "no stats (yet)"
+
+    @botcmd(name="log")
+    def get_log_url(self, msg, args):
+        return "http://log.%s/#search=%s" % (self.jid.getDomain(),
+                urllib.quote(args.encode('utf8')))
+
+    @botcmd(name="logs")
+    def get_log_url2(self, msg, args):
+        return self.get_log_url(msg, args)
