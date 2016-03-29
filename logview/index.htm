@@ -28,9 +28,16 @@ span.highlighted {
 span.searchMatch {
 	background-color: magenta;
 }
+
+.unselectable {
+	-moz-user-select: none;
+	-webkit-user-select: none;
+	-ms-user-select: none;
+}
 </style>
 
-<form>
+<form class="unselectable">
+	<!--todo: make it float-->
 Search logs (date or keywords or /regexp/): <input id="search" type="text" />
 <input type="submit" value="Go" onclick="return searchFromElement()" />
 <span id="search_status"></span>
@@ -98,10 +105,6 @@ function pad(number, size) {
 		number = "0" + number;
 	}
 	return number;
-}
-
-function regexEscape(str) {
-	return str.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
 }
 
 var settings = { statuses: 1 };
@@ -177,12 +180,15 @@ function appendMultilineText(element, text) {
 	}
 }
 function filterAndAppend(pattern, data, date) {
+	var changed = false;
+
 	for (var i = 0; i < data.length; i++) {
 		// TODO: extract to a separate method
 		var text = entryText(data[i], true);
 		if (pattern.exec) {
 			pattern.lastIndex = 0;
 			if (pattern.exec(text)) {
+				changed = true;
 				searchData.push(data[i]);
 			}
 		} else {
@@ -201,16 +207,19 @@ function filterAndAppend(pattern, data, date) {
 				}
 			}
 			if (matched) {
+				changed = true;
 				searchData.push(data[i]);
 			}
 		}
 	}
-	date = date.getTime();
-	searchData.sort(function(e1, e2) {
-		return (Math.abs(e1.time * 1000 - date) -
-			Math.abs(e2.time * 1000 - date));
-	});
-	displayHistoryObjects(searchData, true, textToHTMLConverter(pattern));
+	if (changed) {
+		date = date.getTime();
+		searchData.sort(function(e1, e2) {
+			return (Math.abs(e1.time * 1000 - date) -
+				Math.abs(e2.time * 1000 - date));
+		});
+		displayHistoryObjects(searchData, true, textToHTMLConverter(pattern));
+	}
 }
 function showSearchStatus(text) {
 	document.getElementById("search_status").innerText = text;
