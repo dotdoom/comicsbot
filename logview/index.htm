@@ -398,7 +398,7 @@ function textToHTMLConverter(pattern) {
 			if (pattern.exec) {
 				pattern.lastIndex = 0;
 				var match = pattern.exec(text);
-				if (match) {
+				if (match && match[0].length) {
 					appendMultilineText(node, text.slice(0, match.index));
 					text = text.slice(match.index+match[0].length);
 					matchNode = document.createElement("span");
