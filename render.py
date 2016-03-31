@@ -68,9 +68,12 @@ class Stats(object):
         self.items = {}
         self.last_print = None
         self.output = output
+        self.latest_update = ""
 
     def Add(self, page, key=None, value=None):
         full_name = "%s:%s" % (page["category"], page["comics"])
+        self.latest_update = full_name
+
         new = False
         if full_name not in self.stats:
             self.stats[full_name] = collections.defaultdict(int)
@@ -99,8 +102,8 @@ class Stats(object):
         if output is None:
             output = self.output
         with open(output, "w") as output:
-            output.write("Statistics at %s%s:\n" % (
-                time.ctime(time.time()), suffix))
+            output.write("Statistics at %s%s (latest update to %s):\n" % (
+                time.ctime(time.time()), suffix, self.latest_update))
             for full_name, data in self.stats.iteritems():
                 output.write("  %s\n" % full_name)
                 for k, v in data.iteritems():
