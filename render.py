@@ -149,7 +149,7 @@ def comicStripSelector(page):
             size.setWidth(size.width() + 10)
         if size.width() < 40 or size.height() < 40:
             raise RuntimeError("Selected element is too small")
-        stats.Add(page, "selector/" + container_name)
+        stats.Add(page, "selector: " + container_name)
         return (container, size)
     return selector
 
@@ -181,10 +181,10 @@ def main():
                 FILE_PATH_FORMAT % page)
         if os.path.exists(output_file):
             if page["mtime"] < os.path.getmtime(output_file):
-                stats.Add(page, "skipped (already rendered)")
+                stats.Add(page, "skipped: already rendered")
                 return
             else:
-                stats.Add(page, "re-rendered (outdated)")
+                stats.Add(page, "out of date")
         selector = comicStripSelector(page)
         full_page_url = PAGE_URL_FORMAT % page
         try:
@@ -223,7 +223,7 @@ def main():
                 if page["page"][0].isdigit():
                     pages.append(page)
                 else:
-                    stats.Add(page, "skipped (non-strip)")
+                    stats.Add(page, "skipped: non-strip")
         return pages
 
     for category in w.dokuwiki.getPagelist(ROOT_CATEGORY, {"depth": 2}):
@@ -233,7 +233,7 @@ def main():
             try:
                 renderPage(page)
             except Exception as e:
-                stats.Add(page, "failed/" + e.message.lower())
+                stats.Add(page, "failed: " + str(e).lower())
     stats.Print(suffix=" (finished)")
 
 sys.exit(ApplicationWrapper(main))
