@@ -167,10 +167,14 @@ def touch(fname, times=None):
         os.utime(fname, times)
 
 def main():
+    cookies = ["%s=%s" % (k, v) for k, v in w.getCookies().iteritems()]
     renderer = HTML2PNG(
-        cookies=["%s=%s" % (k, v) for k, v in w.getCookies().iteritems()],
+        cookies=cookies,
         user_agent=USER_AGENT,
         logger=logging)
+    url_opener = urllib2.build_opener()
+    url_opener.addheaders.append(("Cookie", "; ".join(cookies)))
+    url_opener.addheaders.append(("User-Agent", USER_AGENT))
 
     def renderPage(page):
         output_file = os.path.join(config["dokuwiki"]["root"],
@@ -189,7 +193,7 @@ def main():
         except Exception as e:
             # In case of redirects, export_xhtml doesn't return 301/302,
             # so we have to request the "full" page to get the new location.
-            redirected_url = urllib2.urlopen(full_page_url, "HEAD").geturl()
+            redirected_url = url_opener.open(full_page_url, "HEAD").geturl()
             if redirected_url == full_page_url:
                 raise
             else:
