@@ -120,10 +120,13 @@ def comicStripSelector(page):
     def selector(document):
         container_name = "div.ct-container"
         container = document.findFirst(container_name)
-        if container.isNull():
+        # container may be present on the page, but it's geompetry is empty:
+        # e.g. pages with "source" image and translations along with already
+        # renderred image
+        if container.geometry().size().isEmpty():
             container_name = "div.fn-container"
             container = document.findFirst(container_name)
-        if container.isNull():
+        if container.geometry().size().isEmpty():
             if not document.findFirst("iframe").isNull():
                 raise RuntimeError("Iframe is present on page (YT/external)")
             size = None
