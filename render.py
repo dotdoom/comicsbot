@@ -223,7 +223,7 @@ def main():
             try:
                 renderPage(page)
             except Exception as e:
-                stats.Add(page, "[EXCEPTION] " + e.message)
+                stats.Add(page, "failed/" + e.message.lower())
     stats.Print(suffix=" (finished)")
 
 sys.exit(ApplicationWrapper(main))
