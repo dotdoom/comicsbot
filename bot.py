@@ -15,8 +15,8 @@ execfile("config.py")
 w = DokuWiki()
 if w.dokuwiki.login(config["dokuwiki"]["username"],
         config["dokuwiki"]["password"]):
-    welcome_message = "Hello! I've connected to wiki version %s, " \
-        "xmlrpc %s" % (w.dokuwiki.getVersion(),
+    welcome_message = "Hello! I've connected to wiki %s version %s, " \
+        "xmlrpc %s" % (w.dokuwiki.getTitle(), w.dokuwiki.getVersion(),
                 w.dokuwiki.getXMLRPCAPIVersion())
 else:
     welcome_message = "Hi! I cannot authorize to the wiki."
