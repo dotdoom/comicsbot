@@ -9,5 +9,6 @@ config = {
     "dokuwiki": {
         "username": "another_user",
         "password": "another_secret",
+        "root": "/home/doku",
     },
 }
