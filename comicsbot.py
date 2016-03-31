@@ -28,7 +28,7 @@ class MUCJabberBot(JabberBot):
             return
 
         if (msg.getFrom().getStripped() in self.room_nicknames and
-                msg.getType() == 'groupchat'):
+                msg.getType() == "groupchat"):
             # One logger for all rooms, oh no!
             self.room_logger.writeMessage(msg.getFrom().getResource(),
                     message)
@@ -48,12 +48,12 @@ class MUCJabberBot(JabberBot):
 
     def callback_presence(self, conn, pr):
         if pr.getFrom().getStripped() in self.room_nicknames:
-            if pr.getType() == 'unavailable':
+            if pr.getType() == "unavailable":
                 text = "left the room"
-            elif pr.getType() is None:
+            elif pr.getShow() is None:
                 text = "is online"
             else:
-                text = "is %s"
+                text = "is %s" % pr.getShow()
             if pr.getStatus() is not None:
                 text += ": " + pr.getStatus()
             self.room_logger.writeNotification(pr.getFrom().getResource(),
