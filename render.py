@@ -185,7 +185,7 @@ def main():
             # so we have to request the "full" page to get the new location.
             redirected_url = urllib2.urlopen(full_page_url, "HEAD").geturl()
             if redirected_url == full_page_url:
-                raise RuntimeError("Cannot render a page (and no redirect)")
+                raise
             else:
                 stats.Add(page, "redirected")
                 renderer.Render(redirected_url + EXPORT_SUFFIX, output_file,
