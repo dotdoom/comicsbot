@@ -184,7 +184,9 @@ def main():
             # In case of redirects, export_xhtml doesn't return 301/302,
             # so we have to request the "full" page to get the new location.
             redirected_url = urllib2.urlopen(full_page_url, "HEAD").geturl()
-            if redirected_url != full_page_url:
+            if redirected_url == full_page_url:
+                raise RuntimeError("Cannot render a page (and no redirect)")
+            else:
                 stats.Add(page, "redirected")
                 renderer.Render(redirected_url + EXPORT_SUFFIX, output_file,
                         element_selector=selector)
