@@ -25,7 +25,7 @@ else:
 room_logger = RoomLogger(config["jabber"]["logdir"])
 
 bot = ComicsBot(config["jabber"]["username"],
-        config["jabber"]["password"], debug=True, wiki=w,
+        config["jabber"]["password"], wiki=w,
         room_logger=room_logger, res=uuid.uuid1())
 bot.join_room(config["jabber"]["room"], config["jabber"]["nick"])
 bot.send(config["jabber"]["room"], welcome_message, message_type="groupchat")
