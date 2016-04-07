@@ -10,6 +10,9 @@ from jabberbot import JabberBot, botcmd
 
 class MUCJabberBot(JabberBot):
 
+    # Enable ping
+    PING_FREQUENCY = 30
+
     def __init__(self, *args, **kwargs):
         self.room_nicknames = {}
         self.prefix = "!"
