@@ -17,6 +17,7 @@ class MUCJabberBot(JabberBot):
         self.room_nicknames = {}
         self.prefix = "!"
         self.room_logger = kwargs["room_logger"]
+        self.last_join = time.time()
         del kwargs["room_logger"]
         super(MUCJabberBot, self).__init__(*args, **kwargs)
 
@@ -73,6 +74,14 @@ class MUCJabberBot(JabberBot):
         if not private:
             text = "%s: %s" % (msg.getFrom().getResource(), text)
         return super(MUCJabberBot, self).build_reply(msg, text, private)
+
+    def idle_proc(self):
+        if time.time() - self.last_join > 60 * 60 * 2:
+            # Every 2 hours make sure we're in all rooms - important for logging
+            for room, nick in self.room_nicknames.iteritems():
+                self.join_room(room, nick)
+            self.last_join = time.time()
+        return super(MUCJabberBot, self).idle_proc()
 
     TEXT_LIMIT_PER_MESSAGE = 1000
     TEXT_LIMIT_SUFFIX = ' [...]'
