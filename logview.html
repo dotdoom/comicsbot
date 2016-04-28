@@ -234,25 +234,33 @@ function showSearchStatus(text) {
 function binarySearch(searchId, pattern, date, delta) {
 	// That's actually "reverse" binary search.
 	// Who would come up with such a stupid name for this method? Oh, wait...
-	var nextDate = new Date(date.getTime());
-	nextDate.setDate(nextDate.getDate() + delta);
-	if (searchId != activeSearchId) {
+
+	if ((delta > 365) || (searchId != activeSearchId)) {
 		return showSearchStatus("");
 	}
+
+	var nextSearch = function() {
+		if (delta > 0) {
+			binarySearch(searchId, pattern, date, -delta);
+		} else {
+			binarySearch(searchId, pattern, date, -delta+1);
+		}
+	};
+
+	var nextDate = new Date(date.getTime());
+	nextDate.setDate(nextDate.getDate() + delta);
+
+	var tooFarInFutureDate = new Date();
+	tooFarInFutureDate.setDate(tooFarInFutureDate.getDate() + 3);
+	if (nextDate.getTime() > tooFarInFutureDate.getTime()) {
+		return nextSearch();
+	}
+
 	loadHistoryDate(dateFileName(nextDate), function(data) {
 		filterAndAppend(pattern, data, date);
 		showSearchStatus("Searching around " + date.toLocaleDateString() +
 			"... ~" + (Math.abs(delta)*2) + " days (Esc to stop)");
-		if (delta > 365) {
-			searchId = -1;
-		}
-		setTimeout(function() {
-			if (delta > 0) {
-				binarySearch(searchId, pattern, date, -delta);
-			} else {
-				binarySearch(searchId, pattern, date, -delta+1);
-			}
-		}, 100);
+		setTimeout(nextSearch, 100);
 	});
 }
 
@@ -314,13 +322,6 @@ function loadHistoryDate(date, callback) {
 	if (historyCache[date]) {
 		// Expiration?
 		return callback(historyCache[date]);
-	}
-
-	// Check if it makes any sense to request the data
-	var future = new Date();
-	future.setDate(future.getDate() + 3);
-	if ((new Date(date)).getTime() > future.getTime()) {
-		return callback([]);
 	}
 
 	var request = new XMLHttpRequest();
