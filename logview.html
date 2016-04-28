@@ -136,6 +136,13 @@ function getCookie(name) {
 	}
 }
 
+function setCookie(name, value) {
+	var data = name + "=" + value;
+	var expiry = new Date();
+	expiry.setDate(expiry.getDate() + 365);
+	document.cookie = data + "; expires=" + expiry.toUTCString();
+}
+
 window.onhashchange = function() {
 	var newSettings = getHash();
 	if (!newSettings.search) {
@@ -151,7 +158,7 @@ window.onhashchange = function() {
 	if (settings.statuses != newSettings.statuses) {
 		if ("statuses" in newSettings) {
 			settings.statuses = newSettings.statuses;
-			document.cookie = "statuses=" + settings.statuses;
+			setCookie("statuses", settings.statuses);
 		} else {
 			settings.statuses = getCookie("statuses");
 			newSettings.statuses = settings.statuses;
