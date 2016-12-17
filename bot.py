@@ -3,7 +3,7 @@
 
 import inspect
 import logging
-logging.basicConfig()
+logging.basicConfig(level=logging.DEBUG)
 import time
 import uuid
 
