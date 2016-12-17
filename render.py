@@ -105,7 +105,7 @@ class Stats(object):
             output.write("Statistics at %s%s (latest update to %s):\n" % (
                 time.ctime(time.time()), suffix, self.latest_update))
             for full_name, data in self.stats.iteritems():
-                output.write("  %s\n" % full_name)
+                output.write("  %s\n" % full_name.encode("utf-8"))
                 for k, v in data.iteritems():
                     items = self.items[full_name][k]
                     text = "    %s: %s" % (k, v)
