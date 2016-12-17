@@ -1,4 +1,5 @@
 import os
+import subprocess
 
 from PyQt4.QtGui import QApplication
 from PyQt4.QtCore import QTimer
@@ -14,6 +15,7 @@ class HTML2PNG(object):
                 cookies=cookies,
                 userAgent=user_agent,
                 logger=logger)
+        self.devnull = open(os.devnull, 'w')
 
     def Render(self, url, filename, element_selector=None):
         temp_filename = filename + ".tmp"
@@ -22,6 +24,14 @@ class HTML2PNG(object):
             with open(temp_filename, "w") as output:
                 self.renderer.render_to_file(res=url,
                         file_object=output)
+            subprocess.call([
+                'optipng',
+                '-fix',       # error recovery
+                '-preserve',  # preserve file attributes if possible
+                '-force',     # force overwriting original file
+                '-quiet',     # do not talk too much
+                temp_filename,
+            ])
             os.rename(temp_filename, filename)
         finally:
             if os.path.exists(temp_filename):

@@ -8,7 +8,7 @@ Rename `config.example.py` to `config.py`.
 
 # Requirements
 
-Debian: `# apt install python-jabberbot python-webkit python-qt4`
+Debian: `# apt install python-jabberbot python-webkit python-qt4 optipng`
 
 `python-jabberbot` is based on
 [xmpppy](http://xmpppy.sourceforge.net/apidocs/).
