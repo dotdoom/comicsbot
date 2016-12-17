@@ -30,5 +30,5 @@ bot = ComicsBot(config["jabber"]["username"],
         room_logger=room_logger, res=uuid.uuid1())
 bot.join_room(config["jabber"]["room"], config["jabber"]["nick"])
 time.sleep(1)
-bot.send(config["jabber"]["room"], welcome_message, message_type="groupchat")
+#bot.send(config["jabber"]["room"], welcome_message, message_type="groupchat")
 bot.serve_forever()
