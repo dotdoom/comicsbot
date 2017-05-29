@@ -4,6 +4,7 @@
 import inspect
 import logging
 logging.basicConfig(level=logging.DEBUG)
+import os
 import time
 import uuid
 
@@ -27,7 +28,9 @@ room_logger = RoomLogger(config["jabber"]["logdir"])
 
 bot = ComicsBot(config["jabber"]["username"],
         config["jabber"]["password"], wiki=w,
-        room_logger=room_logger, res=uuid.uuid1())
+        room_logger=room_logger, res=uuid.uuid1(),
+        debug=True,  # log XMPP messages
+        markov_file=os.path.join(config["jabber"]["logdir"], "markov.json"))
 bot.join_room(config["jabber"]["room"], config["jabber"]["nick"])
 time.sleep(1)
 #bot.send(config["jabber"]["room"], welcome_message, message_type="groupchat")
