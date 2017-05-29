@@ -4,6 +4,7 @@ import subprocess
 import sys
 import time
 
+# TODO(dotdoom): clean these up (don't improt "*")
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtNetwork import *
@@ -21,6 +22,7 @@ class RenderEngine(object):
                     *args, **kwargs)
 
         def interceptRequest(self, info):
+            # TODO(dotdoom): logging (and an example to enable it)
             #print "Loading: " + str(info.requestUrl())
             for header in self.headers:
                 info.setHttpHeader(*header)
@@ -122,6 +124,7 @@ class RenderEngine(object):
             try:
                 with open(temp_filename, "w") as output:
                     output.write(buffer.buffer().data())
+                # TODO(dotdoom): actually run them
                 #subprocess.call([
                 #    "optipng",
                 #    "-fix",       # error recovery

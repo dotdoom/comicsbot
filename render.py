@@ -18,6 +18,8 @@ PAGE_URL_FORMAT = "http://localhost/%(category)s/%(comics)s/%(page)s"
 EXPORT_SUFFIX = "&do=export_xhtml"
 FILE_PATH_FORMAT = "data/media/%(category)s/%(comics)s/u/%(page)s.png"
 
+# TODO(dotdoom): proper font config (rgba=rgb, hinting=false, CrOS font aliases)
+#                also move it to a ./setup (don't overwrite user settings!)
 ANTIALIAS_FONT_CONFIG = """
 <?xml version='1.0'?>
 <!DOCTYPE fontconfig SYSTEM 'fonts.dtd'>
@@ -145,17 +147,15 @@ def prepareDirectories(data):
                 "page": category_comics_page[2],
                 "mtime": entry["mtime"],
             }
+            output_file = os.path.join(config["dokuwiki"]["root"],
+                    FILE_PATH_FORMAT % page)
             if stats.Add(page):
-                directory = os.path.dirname(
-                        os.path.join(config["dokuwiki"]["root"],
-                            FILE_PATH_FORMAT % page))
+                directory = os.path.dirname(output_file)
                 mkdir_p(directory)
                 # To avoid backups of rendered strips
                 touch(os.path.join(directory, "purgefile"))
 
             if page["page"][0].isdigit():
-                output_file = os.path.join(config["dokuwiki"]["root"],
-                        FILE_PATH_FORMAT % page)
                 if newer_than(output_file, page["mtime"]):
                     stats.Add(page, "skipped: already rendered and up-to-date")
                 else:
@@ -170,6 +170,7 @@ for category in w.dokuwiki.getPagelist(ROOT_CATEGORY, {"depth": 2}):
     category = category["id"].split(":")[1]
     for page in prepareDirectories(
             w.dokuwiki.getPagelist(category, {"depth": 3})):
+        # TODO(dotdoom): handle redirects somehow (export_xhtml doesn't do them)
         urls.append(((PAGE_URL_FORMAT % page) + EXPORT_SUFFIX, page),)
 
 ppjs = """
