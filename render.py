@@ -67,6 +67,7 @@ if not w.dokuwiki.login(config["dokuwiki"]["username"],
 class Stats(object):
 
     MAX_SAMPLES = 5
+    REFRESH_SECONDS = 15
 
     def __init__(self, output):
         self.stats = {}
@@ -74,11 +75,18 @@ class Stats(object):
         self.last_print = None
         self.output = output
         self.latest_update = ""
+        self.total_count = 0
+        self.total_others = 0
 
     def Add(self, page, key="count"):
         key = str(key)
         full_name = "%s:%s" % (page["category"], page["comics"])
         self.latest_update = full_name
+
+        if key == "count":
+            self.total_count += 1
+        else:
+            self.total_others += 1
 
         if full_name not in self.stats:
             self.stats[full_name] = collections.defaultdict(int)
@@ -89,7 +97,7 @@ class Stats(object):
 
         now = time.time()
         if self.last_print:
-            if self.last_print + 30 < now:
+            if self.last_print + self.REFRESH_SECONDS < now:
                 self.Print()
                 self.last_print = now
         else:
@@ -97,8 +105,10 @@ class Stats(object):
 
     def Print(self, suffix=""):
         with open(self.output, "w") as output:
-            output.write("Statistics at %s%s (latest update to %s):\n" % (
-                time.ctime(time.time()), suffix, self.latest_update))
+            output.write(
+                    "Statistics at %s%s (%d/%d, latest update to %s):\n" % (
+                        time.ctime(time.time()), suffix, self.total_others,
+                        self.total_count, self.latest_update))
             for full_name, data in self.stats.iteritems():
                 output.write("  %s\n" % full_name.encode("utf-8"))
                 for k, v in data.iteritems():
