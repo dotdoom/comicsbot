@@ -124,21 +124,22 @@ class RenderEngine(object):
             try:
                 with open(temp_filename, "w") as output:
                     output.write(buffer.buffer().data())
-                # TODO(dotdoom): actually run them
-                #subprocess.call([
-                #    "optipng",
-                #    "-fix",       # error recovery
-                #    "-preserve",  # preserve file attributes if possible
-                #    "-force",     # force overwriting original file
-                #    "-quiet",     # do not talk too much
-                #    temp_filename,
-                #])
-                #subprocess.call([
-                #    "convert",
-                #    "-trim",
-                #    temp_filename,
-                #    filename,
-                #])
+                # TODO(dotdoom): move them into render.py
+                subprocess.call([
+                    "convert",
+                    temp_filename,
+                    "-fuzz", "1%",
+                    "-trim",
+                    filename,
+                ])
+                subprocess.call([
+                    "optipng",
+                    "-fix",       # error recovery
+                    "-preserve",  # preserve file attributes if possible
+                    "-force",     # force overwriting original file
+                    "-quiet",     # do not talk too much
+                    filename,
+                ])
                 os.rename(temp_filename, filename)
             finally:
                 if os.path.exists(temp_filename):
