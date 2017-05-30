@@ -70,7 +70,7 @@ class Stats(object):
     REFRESH_SECONDS = 15
 
     def __init__(self, output):
-        self.stats = {}
+        self.stats = collections.OrderedDict()
         self.items = {}
         self.last_print = None
         self.output = output

@@ -64,7 +64,7 @@ class RenderEngine(object):
                 self.app.exit(0)
             return
 
-        url, data = self.urls.pop()
+        url, data = self.urls.pop(0)
         url = QUrl(url)
 
         view = QWebEngineView()
