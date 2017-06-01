@@ -19,45 +19,9 @@ PAGE_URL_FORMAT = "http://localhost/%(category)s/%(comics)s/%(page)s"
 EXPORT_SUFFIX = "&do=export_xhtml"
 FILE_PATH_FORMAT = "data/media/%(category)s/%(comics)s/u/%(page)s.png"
 
-# TODO(dotdoom): proper font config (rgba=rgb, hinting=false, CrOS font aliases)
-#                also move it to a ./setup (don't overwrite user settings!)
-ANTIALIAS_FONT_CONFIG = """
-<?xml version='1.0'?>
-<!DOCTYPE fontconfig SYSTEM 'fonts.dtd'>
-<fontconfig>
-<match target="font" >
-<edit mode="assign" name="rgba" >
-<const>none</const>
-</edit>
-</match>
-<match target="font" >
-<edit mode="assign" name="hinting" >
-<bool>true</bool>
-</edit>
-</match>
-<match target="font" >
-<edit mode="assign" name="hintstyle" >
-<const>hintslight</const>
-</edit>
-</match>
-<match target="font" >
-<edit mode="assign" name="antialias" >
-<bool>true</bool>
-</edit>
-</match>
-</fontconfig>
-""".strip()
-
-def WriteFontConfig(path="~/.config/fontconfig/fonts.conf"):
-    path = os.path.expanduser(path)
-    with open(path, "w") as cfg:
-        cfg.write(ANTIALIAS_FONT_CONFIG)
-
 execfile("config.py")
 
 logging.basicConfig(level=logging.WARNING)
-
-WriteFontConfig()
 
 w = DokuWiki(user_agent=USER_AGENT)
 if not w.dokuwiki.login(config["dokuwiki"]["username"],
