@@ -32,12 +32,15 @@ class RenderEngine(object):
             headers=None,
             simultaneous_urls=10,
             width=2000,
-            height=2000,
+            height=4000,
             ):
         self.urls = urls
         self.after_render = after_render
         self.postprocess_javascript = postprocess_javascript
         self.cookies = cookies
+        # TODO(dotdoom): ignore width/height. Resize to contentsSize when we
+        #                have the page rendered (then wait for the next render
+        #                using JavaScript workaround mentioned below).
         self.width = width
         self.height = height
 

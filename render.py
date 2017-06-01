@@ -1,6 +1,9 @@
 #!/usr/bin/env python2.7
 # coding: utf-8
 
+# TODO(dotdoom): add Chrome version to stats output (fetch it in web2png
+#                via Qt.CHROMIUM_VERSION and pass it through to here).
+
 import collections
 import errno
 import logging
