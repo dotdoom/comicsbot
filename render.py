@@ -203,6 +203,10 @@ if (container) {
   for (var i = 0; i < navControls.length; i++) {
     navControls[i].style.display = "none";
   }
+  var pageNames = document.getElementsByTagName("h5");
+  if (pageNames.length > 0) {
+    pageNames[0].style.display = "none";
+  }
   null; // Take screenshot of the whole page
 }
 """
