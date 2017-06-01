@@ -1,12 +1,14 @@
+import logging
 import sys
 
-# TODO(dotdoom): clean these up (don't improt "*")
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtNetwork import *
-from PyQt5.QtWidgets import *
-from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWebEngineCore import QWebEngineUrlRequestInterceptor
+from PyQt5.QtWebEngineWidgets import QWebEngineView
+from PyQt5.QtWidgets import *
+
+logger = logging.getLogger(__name__)
 
 class RenderEngine(object):
 
@@ -18,8 +20,7 @@ class RenderEngine(object):
                     *args, **kwargs)
 
         def interceptRequest(self, info):
-            # TODO(dotdoom): logging (and an example to enable it)
-            #print "Loading: " + str(info.requestUrl())
+            logger.debug("Loading: %s", info.requestUrl())
             for header in self.headers:
                 info.setHttpHeader(*header)
 
@@ -31,7 +32,7 @@ class RenderEngine(object):
             headers=None,
             simultaneous_urls=10,
             width=2000,
-            height=1200,
+            height=2000,
             ):
         self.urls = urls
         self.after_render = after_render
@@ -91,32 +92,49 @@ class RenderEngine(object):
                 # TODO(dotdoom): use requestAnimationFrame and console.log in
                 #                its callback, which can be intercepted here.
                 view.page().runJavaScript(self.postprocess_javascript,
-                        lambda javascript_result: QTimer.singleShot(5000,
+                        lambda js_result: QTimer.singleShot(5000,
                             lambda: self.postprocessFinished(user_data, view,
-                                javascript_result)))
+                                js_result)))
             else:
                 self.postprocessFinished(user_data, view, None)
         else:
             self.after_render(user_data, RuntimeError("Page load has failed"))
             QTimer.singleShot(0, self.renderNext)
 
-    def postprocessFinished(self, user_data, view, arg):
-        if isinstance(arg, basestring):
-            self.after_render(user_data, RuntimeError(arg))
+    def postprocessFinished(self, user_data, view, js_result):
+        if isinstance(js_result, basestring):
+            self.after_render(user_data, RuntimeError(js_result))
         else:
-            size = view.page().contentsSize()
-            image = QImage(size.toSize(), QImage.Format_ARGB32)
-            image.fill(QColor(255, 0, 0, 0).rgba())
-            painter = QPainter(image)
-            view.render(painter)
-            painter.end()
-            view.deleteLater()
+            # contentsSize() is a QRectF (float metrics)
+            size = view.page().contentsSize().toSize()
+            if size.width() > self.width or size.height() > self.height:
+                logger.error(
+                        "Page contents (%dx%d) do not fit into widget (%dx%d), "
+                        "contents may be cropped", size.width(), size.height(),
+                        self.width, self.height)
+                self.after_render(user_data,
+                        RuntimeError("Widget is too small"))
+            else:
+                if isinstance(js_result, list):
+                    rect = QRect(*js_result)
+                    size = rect.size()
+                    region = QRegion(rect)
+                    del rect
+                else:
+                    rect = QRect()
+                    rect.setSize(size)
+                    region = QRegion(rect)
+                    del rect
 
-            if isinstance(arg, list):
-                image = image.copy(*arg)
-            buffer = QBuffer()
-            image.save(buffer, "png")
+                image = QImage(size, QImage.Format_ARGB32)
+                image.fill(QColor(255, 0, 0, 0).rgba())
+                painter = QPainter(image)
+                view.render(painter, QPoint(), region)
+                painter.end()
+                view.deleteLater()
+                buffer = QBuffer()
+                image.save(buffer, "png")
 
-            self.after_render(user_data, buffer.buffer().data())
+                self.after_render(user_data, buffer.buffer().data())
 
         QTimer.singleShot(0, self.renderNext)
