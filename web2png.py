@@ -1,8 +1,4 @@
-import logging
-import os
-import subprocess
 import sys
-import time
 
 # TODO(dotdoom): clean these up (don't improt "*")
 from PyQt5.QtCore import *
@@ -64,7 +60,7 @@ class RenderEngine(object):
                 self.app.exit(0)
             return
 
-        url, data = self.urls.pop(0)
+        url, user_data = self.urls.pop(0)
         url = QUrl(url)
 
         view = QWebEngineView()
@@ -82,11 +78,12 @@ class RenderEngine(object):
         if self.requestInterceptor:
             view.page().profile().setRequestInterceptor(self.requestInterceptor)
 
-        view.loadFinished.connect(lambda ok: self.loadFinished(data, view, ok))
+        view.loadFinished.connect(
+                lambda ok: self.loadFinished(user_data, view, ok))
         view.load(url)
         view.show()
 
-    def loadFinished(self, data, view, ok):
+    def loadFinished(self, user_data, view, ok):
         if ok:
             if self.postprocess_javascript:
                 # loadFinished fires before the page is completely rendered,
@@ -94,17 +91,18 @@ class RenderEngine(object):
                 # TODO(dotdoom): use requestAnimationFrame and console.log in
                 #                its callback, which can be intercepted here.
                 view.page().runJavaScript(self.postprocess_javascript,
-                        lambda arg: QTimer.singleShot(5000,
-                            lambda: self.postprocessFinished(data, view, arg)))
+                        lambda javascript_result: QTimer.singleShot(5000,
+                            lambda: self.postprocessFinished(user_data, view,
+                                javascript_result)))
             else:
-                self.postprocessFinished(data, view, None)
+                self.postprocessFinished(user_data, view, None)
         else:
-            self.after_render(data, RuntimeError("Page load has failed"))
+            self.after_render(user_data, RuntimeError("Page load has failed"))
             QTimer.singleShot(0, self.renderNext)
 
-    def postprocessFinished(self, data, view, arg):
+    def postprocessFinished(self, user_data, view, arg):
         if isinstance(arg, basestring):
-            self.after_render(data, RuntimeError(arg))
+            self.after_render(user_data, RuntimeError(arg))
         else:
             size = view.page().contentsSize()
             image = QImage(size.toSize(), QImage.Format_ARGB32)
@@ -119,30 +117,6 @@ class RenderEngine(object):
             buffer = QBuffer()
             image.save(buffer, "png")
 
-            filename = self.after_render(data, None)
-            temp_filename = filename + ".tmp"
-            try:
-                with open(temp_filename, "w") as output:
-                    output.write(buffer.buffer().data())
-                # TODO(dotdoom): move them into render.py
-                subprocess.call([
-                    "convert",
-                    temp_filename,
-                    "-fuzz", "1%",
-                    "-trim",
-                    filename,
-                ])
-                subprocess.call([
-                    "optipng",
-                    "-fix",       # error recovery
-                    "-preserve",  # preserve file attributes if possible
-                    "-force",     # force overwriting original file
-                    "-quiet",     # do not talk too much
-                    filename,
-                ])
-                os.rename(temp_filename, filename)
-            finally:
-                if os.path.exists(temp_filename):
-                    os.remove(temp_filename)
+            self.after_render(user_data, buffer.buffer().data())
 
         QTimer.singleShot(0, self.renderNext)

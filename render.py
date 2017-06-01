@@ -5,6 +5,7 @@ import collections
 import errno
 import logging
 import os
+import subprocess
 import sys
 import time
 import urllib2
@@ -204,14 +205,36 @@ if (container) {
 }
 """
 
-def afterRender(page, error):
-    if error:
-        stats.Add(page, "failed: " + error.message)
+def afterRender(page, data):
+    if isinstance(data, Exception):
+        stats.Add(page, "failed: " + data.message)
         return
     output_file = os.path.join(config["dokuwiki"]["root"],
             FILE_PATH_FORMAT % page)
+    temp_file = output_file + ".tmp"
+    try:
+        with open(temp_file, "w") as output:
+            output.write(data)
+        subprocess.call([
+            "mogrify",
+            "-fuzz", "1%",
+            "-trim",
+            temp_file,
+        ])
+        subprocess.call([
+            "optipng",
+            "-fix",       # error recovery
+            "-preserve",  # preserve file attributes if possible
+            "-force",     # force overwriting original file
+            "-quiet",     # do not talk too much
+            temp_file,
+        ])
+        os.rename(temp_file, output_file)
+    finally:
+        if os.path.exists(temp_file):
+            os.remove(temp_file)
+
     stats.Add(page, "rendered")
-    return output_file
 
 stats.Print(suffix=" (started)")
 code = RenderEngine(
