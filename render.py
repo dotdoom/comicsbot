@@ -142,8 +142,10 @@ def touch(fname, times=None):
 def newer_than(fname, mtime):
     try:
         return mtime < os.path.getmtime(fname)
-    except OSError:
-        return False
+    except OSError as e:
+        if e.errno == errno.ENOENT:
+            return False
+        raise
 
 cookies = [(k, v) for k, v in w.getCookies().iteritems()]
 
@@ -160,11 +162,11 @@ def prepareDirectories(data):
             }
             output_file = os.path.join(config["dokuwiki"]["root"],
                     FILE_PATH_FORMAT % page)
-            if stats.Add(page):
-                directory = os.path.dirname(output_file)
-                mkdir_p(directory)
-                # To avoid backups of rendered strips
-                touch(os.path.join(directory, "purgefile"))
+            stats.Add(page)
+            directory = os.path.dirname(output_file)
+            mkdir_p(directory)
+            # To avoid backups of rendered strips
+            touch(os.path.join(directory, "purgefile"))
 
             if page["page"][0].isdigit():
                 if newer_than(output_file, page["mtime"]):
