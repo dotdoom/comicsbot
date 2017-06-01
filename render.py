@@ -1,9 +1,9 @@
 #!/usr/bin/env python2.7
-# coding: utf-8
 
 # TODO(dotdoom): add Chrome version to stats output (fetch it in web2png
 #                via Qt.CHROMIUM_VERSION and pass it through to here).
 
+import codecs
 import collections
 import errno
 import logging
@@ -11,7 +11,7 @@ import os
 import subprocess
 import sys
 import time
-import urllib2
+import urllib
 
 from dokuwiki import DokuWiki
 from web2png import RenderEngine
@@ -20,7 +20,6 @@ USER_AGENT = "RenderComics/1.0"
 ROOT_CATEGORY = "discuss"
 PAGE_URL_FORMAT = "http://localhost/%(category)s/%(comics)s/%(page)s"
 EXPORT_SUFFIX = "&do=export_xhtml"
-FILE_PATH_FORMAT = "data/media/%(category)s/%(comics)s/u/%(page)s.png"
 
 execfile("config.py")
 
@@ -31,6 +30,13 @@ if not w.dokuwiki.login(config["dokuwiki"]["username"],
         config["dokuwiki"]["password"]):
     sys.stderr.write("Cannot authenticate to DokuWiki.\n")
     sys.exit(1)
+
+def pageFilePath(page):
+    page = page.copy()
+    for k in list(page.keys()):
+        page[k] = urllib.quote(unicode(page[k]).encode("utf-8"))
+    return os.path.join(config["dokuwiki"]["root"],
+            "data/media/%(category)s/%(comics)s/u/%(page)s.png" % page)
 
 class Stats(object):
 
@@ -47,7 +53,7 @@ class Stats(object):
         self.total_others = 0
 
     def Add(self, page, key="count"):
-        key = str(key)
+        key = unicode(key)
         full_name = "%s:%s" % (page["category"], page["comics"])
         self.latest_update = full_name
 
@@ -73,6 +79,7 @@ class Stats(object):
 
     def Print(self, suffix=""):
         with open(self.output, "w") as output:
+            output.write(str(codecs.BOM_UTF8))
             output.write(
                     "Statistics at %s%s (%d/%d, latest update to %s):\n" % (
                         time.ctime(time.time()), suffix, self.total_others,
@@ -92,6 +99,7 @@ class Stats(object):
 
 stats = Stats(output=os.path.join(config["dokuwiki"]["root"],
     "render-stats.txt"))
+
 
 def mkdir_p(path):
     try:
@@ -119,7 +127,7 @@ cookies = [(k, v) for k, v in w.getCookies().iteritems()]
 def prepareDirectories(data):
     pages = []
     for entry in data:
-        category_comics_page = entry["id"].split(":")
+        category_comics_page = unicode(entry["id"]).split(":")
         if len(category_comics_page) == 3:
             page = {
                 "category": category_comics_page[0],
@@ -127,12 +135,11 @@ def prepareDirectories(data):
                 "page": category_comics_page[2],
                 "mtime": entry["mtime"],
             }
-            output_file = os.path.join(config["dokuwiki"]["root"],
-                    FILE_PATH_FORMAT % page)
+            output_file = pageFilePath(page)
             stats.Add(page)
             directory = os.path.dirname(output_file)
             mkdir_p(directory)
-            # To avoid backups of rendered strips
+            # To prevent backing up the images we generate.
             touch(os.path.join(directory, "purgefile"))
 
             if page["page"][0].isdigit():
@@ -147,7 +154,7 @@ def prepareDirectories(data):
 urls = []
 
 for category in w.dokuwiki.getPagelist(ROOT_CATEGORY, {"depth": 2}):
-    category = category["id"].split(":")[1]
+    category = unicode(category["id"]).split(":")[1]
     for page in prepareDirectories(
             w.dokuwiki.getPagelist(category, {"depth": 3})):
         # TODO(dotdoom): handle redirects somehow (export_xhtml doesn't do them)
@@ -182,8 +189,7 @@ def afterRender(page, data):
     if isinstance(data, Exception):
         stats.Add(page, "failed: " + data.message)
         return
-    output_file = os.path.join(config["dokuwiki"]["root"],
-            FILE_PATH_FORMAT % page)
+    output_file = pageFilePath(page)
     temp_file = output_file + ".tmp"
     try:
         with open(temp_file, "w") as output:
