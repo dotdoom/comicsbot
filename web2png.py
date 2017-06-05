@@ -134,10 +134,12 @@ class RenderEngine(object):
                 painter = QPainter(image)
                 view.render(painter, QPoint(), region)
                 painter.end()
-                view.deleteLater()
                 buffer = QBuffer()
                 image.save(buffer, "png")
 
                 self.after_render(user_data, buffer.buffer().data())
 
+        # This is important. Holding this object might be not a big deal for Python,
+        # but it also keeps a Chromium renderer instance running.
+        view.deleteLater()
         QTimer.singleShot(0, self.renderNext)
