@@ -28,7 +28,7 @@ room_logger = RoomLogger(config["jabber"]["logdir"])
 
 bot = ComicsBot(config["jabber"]["username"],
         config["jabber"]["password"], wiki=w,
-        room_logger=room_logger, res=uuid.uuid1(),
+        room_logger=room_logger, res="ReplaceMe",
         debug=True,  # log XMPP messages
         markov_file=os.path.join(config["jabber"]["logdir"], "markov.json"))
 bot.join_room(config["jabber"]["room"], config["jabber"]["nick"])
