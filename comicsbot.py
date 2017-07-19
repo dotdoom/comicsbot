@@ -1,7 +1,6 @@
 # coding: utf-8
 
 import httplib
-import markovify
 import random
 import time
 import traceback
@@ -9,6 +8,7 @@ import urllib
 import xmlrpclib
 
 from jabberbot import JabberBot, botcmd
+from markov import MarkovChain
 
 class MUCJabberBot(JabberBot):
 
@@ -19,8 +19,7 @@ class MUCJabberBot(JabberBot):
         self.room_nicknames = {}
         self.prefix = "!"
         self.room_logger = kwargs.pop("room_logger")
-        self.markov_file = kwargs.pop("markov_file")
-        self.markov = None
+        self.markov = MarkovChain(kwargs.pop("markov_file"))
         self.last_join = time.time()
         super(MUCJabberBot, self).__init__(*args, **kwargs)
 
@@ -39,22 +38,7 @@ class MUCJabberBot(JabberBot):
             # One logger for all rooms, oh no!
             self.room_logger.writeMessage(msg.getFrom().getResource(),
                     message)
-            try:
-                markov_model = markovify.NewlineText(message)
-                if self.markov is None:
-                    try:
-                        with open(self.markov_file, "r") as f:
-                            self.markov = markovify.NewlineText.from_chain(f.read())
-                        self.markov = markovify.combine([self.markov, markov_model])
-                    except:
-                        traceback.print_exc()
-                        self.markov = markov_model
-                else:
-                    self.markov = markovify.combine([self.markov, markov_model])
-                with open(self.markov_file, "w") as f:
-                    f.write(self.markov.chain.to_json())
-            except:
-                traceback.print_exc()
+            self.markov.Add(message)
 
         if message.startswith(self.prefix):
             msg.setBody(message[len(self.prefix):])
@@ -65,25 +49,12 @@ class MUCJabberBot(JabberBot):
                 nickname = self.room_nicknames[room]
                 if message.startswith(nickname) and msg.getFrom().getResource() != nickname:
                     msg.setBody(message[len(nickname)+1:].strip())
-                    markov = self.get_markov()
+                    markov = self.markov.Get()
                     if markov:
                         self.send_simple_reply(msg, markov)
                 else:
                     return
         return super(MUCJabberBot, self).callback_message(conn, msg)
-
-    def get_markov(self):
-        if self.markov is not None:
-            try:
-                reply = ''
-                for i in xrange(10):
-                    new_reply = self.markov.make_short_sentence(200, tries=100)
-                    if (new_reply is not None) and (len(new_reply) > len(reply)):
-                        reply = new_reply
-                if reply:
-                    return reply
-            except:
-                traceback.print_exc()
 
     def callback_presence(self, conn, pr):
         if pr.getFrom().getStripped() in self.room_nicknames:
