@@ -30,15 +30,15 @@ class MarkovChain(object):
         else:
             self._model = markovify.combine([self._model, model])
 
-        with open(self.markov_file, "w") as f:
-            f.write(self.markov.chain.to_json())
+        with open(self._file_name, "w") as f:
+            f.write(self._model.chain.to_json())
 
     def get(self, max_length=200):
         reply = ''
-        if self.markov is not None:
+        if self._model is not None:
             try:
                 for i in xrange(10):
-                    new_reply = self.markov.make_short_sentence(max_length,
+                    new_reply = self._model.make_short_sentence(max_length,
                             tries=100)
                     if (new_reply is not None) and (len(new_reply) > len(reply)):
                         reply = new_reply
