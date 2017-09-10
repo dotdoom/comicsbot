@@ -2,6 +2,7 @@ config = {
     "jabber": {
         "username": "user@example.org",
         "password": "secret",
+        "resource": "ReplaceMe",
         "room": "doku@conference.example.org",
         "nick": "ComicsBot",
         "logdir": "/tmp/comics_log",
