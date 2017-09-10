@@ -36,9 +36,9 @@ class MUCJabberBot(JabberBot):
         if (msg.getFrom().getStripped() in self.room_nicknames and
                 msg.getType() == "groupchat"):
             # One logger for all rooms, oh no!
-            self.room_logger.writeMessage(msg.getFrom().getResource(),
+            self.room_logger.write_message(msg.getFrom().getResource(),
                     message)
-            self.markov.Add(message)
+            self.markov.add(message)
 
         if message.startswith(self.prefix):
             msg.setBody(message[len(self.prefix):])
@@ -49,7 +49,7 @@ class MUCJabberBot(JabberBot):
                 nickname = self.room_nicknames[room]
                 if message.startswith(nickname) and msg.getFrom().getResource() != nickname:
                     msg.setBody(message[len(nickname)+1:].strip())
-                    markov = self.markov.Get()
+                    markov = self.markov.get()
                     if markov:
                         self.send_simple_reply(msg, markov)
                 else:
@@ -66,7 +66,7 @@ class MUCJabberBot(JabberBot):
                 text = "is %s" % pr.getShow()
             if pr.getStatus() is not None:
                 text += ": " + pr.getStatus()
-            self.room_logger.writeNotification(pr.getFrom().getResource(),
+            self.room_logger.write_notification(pr.getFrom().getResource(),
                     text)
         return super(MUCJabberBot, self).callback_presence(conn, pr)
 

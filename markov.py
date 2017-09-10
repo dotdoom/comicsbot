@@ -10,14 +10,14 @@ class MarkovChain(object):
         self._model = None
         super(MarkovChain, self).__init__()
 
-    def Add(self, message):
+    def add(self, message):
         try:
             model = markovify.NewlineText(message)
-            self.Merge(model)
+            self.merge(model)
         except:
             traceback.print_exc()
 
-    def Merge(self, model):
+    def merge(self, model):
         if self._model is None:
             try:
                 with open(self._file_name, "r") as f:
@@ -33,7 +33,7 @@ class MarkovChain(object):
         with open(self.markov_file, "w") as f:
             f.write(self.markov.chain.to_json())
 
-    def Get(self, max_length=200):
+    def get(self, max_length=200):
         reply = ''
         if self.markov is not None:
             try:
