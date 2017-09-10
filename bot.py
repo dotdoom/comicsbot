@@ -5,6 +5,7 @@ import inspect
 import logging
 logging.basicConfig(level=logging.DEBUG)
 import os
+import sys
 import time
 import uuid
 
@@ -12,7 +13,7 @@ from comicsbot import ComicsBot
 from dokuwiki import DokuWiki
 from roomlogger import RoomLogger
 
-execfile("config.py")
+execfile(sys.argv[1] if len(sys.argv) > 1 else "config.py")
 
 w = DokuWiki()
 if w.dokuwiki.login(config["dokuwiki"]["username"],
