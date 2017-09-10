@@ -2,10 +2,12 @@
 
 import httplib
 import random
+import sdnotify
 import time
 import traceback
 import urllib
 import xmlrpclib
+import xmpp
 
 from jabberbot import JabberBot, botcmd
 from markov import MarkovChain
@@ -20,7 +22,8 @@ class MUCJabberBot(JabberBot):
         self.prefix = "!"
         self.room_logger = kwargs.pop("room_logger")
         self.markov = MarkovChain(kwargs.pop("markov_file"))
-        self.last_join = time.time()
+        self.last_ping = time.time()
+        self._sdnotify = sdnotify.SystemdNotifier()
         super(MUCJabberBot, self).__init__(*args, **kwargs)
 
     def callback_message(self, conn, msg):
@@ -82,12 +85,34 @@ class MUCJabberBot(JabberBot):
         return super(MUCJabberBot, self).build_reply(msg, text, private)
 
     def idle_proc(self):
-        if time.time() - self.last_join > 60 * 60 * 2:
-            # Every 2 hours make sure we're in all rooms - important for logging
-            for room, nick in self.room_nicknames.iteritems():
-                self.join_room(room, nick)
-            self.last_join = time.time()
+        if time.time() - self.last_ping > 30:
+            # TODO: use WATCHDOG_USEC environment to check this timer
+            self.last_ping = time.time()
+            try:
+                for room, nick in self.room_nicknames.iteritems():
+                    if not self.room_ping(room):
+                        self.join_room(room, nick)
+                self._sdnotify.notify('WATCHDOG=1')
+            except:
+                traceback.print_exc()
         return super(MUCJabberBot, self).idle_proc()
+
+    def room_ping(self, room):
+        item = xmpp.simplexml.Node('item')
+        item.setAttr('nick', self.room_nicknames[room])
+        item.setAttr('role', "none")
+        NS_MUCADMIN = 'http://jabber.org/protocol/muc#admin'
+        iq = xmpp.Iq(typ='set', queryNS=NS_MUCADMIN, xmlns=None, to=room,
+                payload=set([item]))
+        item.setTagData('reason', "ping")
+        outcome = self.connect().WaitForResponse(self.connect().send(iq))
+        if outcome:
+            tag = outcome.getTag('error')
+            if tag:
+                # not-allowed
+                return tag.getAttr('code') == '405'
+            return True
+        return False
 
     TEXT_LIMIT_PER_MESSAGE = 1000
     TEXT_LIMIT_SUFFIX = ' [...]'
