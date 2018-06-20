@@ -8,6 +8,7 @@ import collections
 import errno
 import logging
 import os
+import re
 import subprocess
 import sys
 import time
@@ -17,8 +18,8 @@ from dokuwiki import DokuWiki
 from web2png import RenderEngine
 
 USER_AGENT = "RenderComics/1.0"
-ROOT_CATEGORY = "discuss"
-PAGE_URL_FORMAT = "http://localhost/%(category)s/%(comics)s/%(page)s"
+ROOT_CATEGORY = "menu"
+PAGE_URL_FORMAT = "http://localhost/%(comics)s/%(page)s"
 EXPORT_SUFFIX = "&do=export_xhtml"
 
 execfile("config.py")
@@ -36,7 +37,7 @@ def pageFilePath(page):
     for k in list(page.keys()):
         page[k] = urllib.quote(unicode(page[k]).encode("utf-8"))
     return os.path.join(config["dokuwiki"]["root"],
-            "data/media/%(category)s/%(comics)s/u/%(page)s.png" % page)
+            "data/media/%(comics)s/u/%(page)s.png" % page)
 
 class Stats(object):
 
@@ -54,7 +55,7 @@ class Stats(object):
 
     def Add(self, page, key="count"):
         key = unicode(key)
-        full_name = "%s:%s" % (page["category"], page["comics"])
+        full_name = page["comics"]
         self.latest_update = full_name
 
         if key == "count":
@@ -127,36 +128,35 @@ cookies = [(k, v) for k, v in w.getCookies().iteritems()]
 def prepareDirectories(data):
     pages = []
     for entry in data:
-        category_comics_page = unicode(entry["id"]).split(":")
-        if len(category_comics_page) == 3:
-            page = {
-                "category": category_comics_page[0],
-                "comics": category_comics_page[1],
-                "page": category_comics_page[2],
-                "mtime": entry["mtime"],
-            }
-            output_file = pageFilePath(page)
-            stats.Add(page)
-            directory = os.path.dirname(output_file)
-            mkdir_p(directory)
-            # To prevent backing up the images we generate.
-            touch(os.path.join(directory, "purgefile"))
+        comics_page = unicode(entry["id"]).split(":")
+        pagenum = comics_page.pop()
+        comics = '/'.join(comics_page)
+        page = {
+            "comics": comics,
+            "page": pagenum,
+            "mtime": entry["mtime"],
+        }
+        output_file = pageFilePath(page)
+        stats.Add(page)
+        directory = os.path.dirname(output_file)
+        mkdir_p(directory)
+        # To prevent backing up the images we generate.
+        touch(os.path.join(directory, "purgefile"))
 
-            if page["page"][0].isdigit():
-                if newer_than(output_file, page["mtime"]):
-                    stats.Add(page, "skipped: already rendered and up-to-date")
-                else:
-                    pages.append(page)
+        if page["page"][0].isdigit():
+            if newer_than(output_file, page["mtime"]):
+                stats.Add(page, "skipped: already rendered and up-to-date")
             else:
-                stats.Add(page, "skipped: non-strip")
+                pages.append(page)
+        else:
+            stats.Add(page, "skipped: non-strip")
     return pages
 
 urls = []
-
-for category in w.dokuwiki.getPagelist(ROOT_CATEGORY, {"depth": 2}):
-    category = unicode(category["id"]).split(":")[1]
-    for page in prepareDirectories(
-            w.dokuwiki.getPagelist(category, {"depth": 3})):
+all_pages = w.dokuwiki.getPagelist("", {"depth": 5})
+for comics in re.findall(r'\[\[:([^\]]+):index\]\]', w.wiki.getPage(ROOT_CATEGORY)):
+    comics = unicode(comics)
+    for page in prepareDirectories(filter(lambda p: unicode(p["id"]).startswith(comics + ':'), all_pages)):
         # TODO(dotdoom): handle redirects somehow (export_xhtml doesn't do them)
         urls.append(((PAGE_URL_FORMAT % page) + EXPORT_SUFFIX, page),)
 
