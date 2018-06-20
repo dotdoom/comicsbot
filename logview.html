@@ -1,9 +1,9 @@
 <html>
 <head>
 	<title>chatlogs</title>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/pikaday/1.4.0/pikaday.js" type="text/javascript"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/autolinker/0.25.1/Autolinker.min.js" type="text/javascript"></script>
-	<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/pikaday/1.4.0/css/pikaday.min.css">
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/pikaday/1.6.1/pikaday.js" type="text/javascript"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/autolinker/1.6.2/Autolinker.min.js" type="text/javascript"></script>
+	<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/pikaday/1.6.1/css/pikaday.min.css">
 </head>
 <body>
 
@@ -448,9 +448,13 @@ function textToHTMLConverter(pattern) {
 		appendMultilineText(node, text);
 
 		if (autolink) {
-			node.innerHTML = Autolinker.link(node.innerHTML, {
-				stripPrefix: false,
-			});
+			try {
+				node.innerHTML = Autolinker.link(node.innerHTML, {
+					stripPrefix: false,
+				});
+			} catch(e) {
+				console.error(e);
+			}
 		}
 
 		return node;
