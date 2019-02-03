@@ -1,17 +1,43 @@
 # comicsbot
 
+## Description
+
 Bot for DokuWiki, mainly website http://comicslate.org.
 
 Rendering script for DokuWiki to render a subset of pages.
 
-Rename `config.example.py` to `config.py`.
+## Requirements
 
-# Requirements
+NodeJS 8.0.0.
 
-Debian: `# apt install python-jabberbot python-pyqt5.qtwebengine imagemagick optipng`
+## Install
 
-`python-jabberbot` is based on
-[xmpppy](http://xmpppy.sourceforge.net/apidocs/).
+Copy config.example.json to config.json and edit.
 
-DokuWiki wrapper uses Python standard
-[xmlrpclib](https://docs.python.org/2/library/xmlrpclib.html).
+Invitation link:
+
+https://discordapp.com/api/oauth2/authorize?client_id=541646051270983683&permissions=523330&scope=bot
+
+(all text permission + Kick + View Channels)
+
+## Details
+
+### State
+
+### Features
+
+* tr
+
+* extract `<title>`
+
+* latest changes
+
+## TODO
+
+* add tslint
+
+* add tests
+
+* figure out directory structure (dist, lib, src)
+
+* figure out tsconfig.json, package.json etc parameters
