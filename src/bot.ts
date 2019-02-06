@@ -64,8 +64,14 @@ export class Bot {
                 for (const page of rendered) {
                     console.log('  rendered box ', page);
 
-                    description += `Box ${JSON.stringify(page.box)} would be ` +
-                        'saved to `' + page.originalScreenshotPath + '`\n';
+                    if (page.box) {
+                        description += 'Box ' + JSON.stringify(page.box);
+                    } else {
+                        description += 'Full page';
+                    }
+
+                    description += ' would be saved to `' +
+                        page.originalScreenshotPath + '`\n';
                     response.setURL(page.pageURL);
 
                     if (imageAdded) {
