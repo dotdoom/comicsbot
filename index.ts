@@ -5,6 +5,7 @@ import { Doku } from './src/doku';
 import { onExit } from './src/on_exit';
 import { Renderer } from './src/render';
 
+// Used by our .service initfile to find the bot process.
 process.title = 'comicsbot';
 
 interface Config {
