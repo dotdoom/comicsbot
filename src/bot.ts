@@ -1,6 +1,12 @@
 import * as discord from 'discord.js';
 import { Renderer } from './render';
 
+enum Emoji {
+    OK = "\u{1f44c}",
+    ThumbsUp = "\u{1f44d}",
+    ThumbsDown = "\u{1f44e}",
+}
+
 export class Bot {
     private client: discord.Client = new discord.Client();
     private renderer: Renderer;
@@ -59,14 +65,15 @@ export class Bot {
             console.log(`Got a message ${message.content} [CLEAN:${message.cleanContent}] from user ${message.author.username} in channel ${channel.name} server ${channel.guild.name}`);
         }
 
-        if (message.isMentioned(this.client.user)) {
-            message.react('\u{1f44d}');  // Thumbs up.
-        }
+        /*if (message.isMentioned(this.client.user)) {
+        }*/
 
         // TODO(dotdoom): understand `quoted text` because otherwise Discord can
         //                replace some parts of the message with smileys.
 
         if (message.content.startsWith('render ')) {
+            message.react(Emoji.OK);
+
             const params = message.content.split(' ');
             if (params.length != 2) {
                 return;
@@ -115,8 +122,10 @@ export class Bot {
                     description += '*no images rendered (empty boxes list)*';
                 }
                 response.setDescription(description);
+                message.react(Emoji.ThumbsUp);
                 message.reply(response);
             } catch (e) {
+                message.react(Emoji.ThumbsDown);
                 message.reply(new discord.RichEmbed()
                     .setTitle('Exception caught')
                     .setColor(0xFF0000)
