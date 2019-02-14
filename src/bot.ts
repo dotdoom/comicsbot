@@ -51,8 +51,11 @@ export class Bot {
         if (channel instanceof discord.DMChannel) {
             console.log(`Got a direct message from user ${message.author.username}`);
         } else if (channel instanceof discord.TextChannel) {
-            console.log(`Got a message from user ${message.author.username} in channel ${channel.name} server ${channel.guild.name}`);
+            console.log(`Got a message ${message.content} [CLEAN:${message.cleanContent}] from user ${message.author.username} in channel ${channel.name} server ${channel.guild.name}`);
         }
+
+        // TODO(dotdoom): understand `quoted text` because otherwise Discord can
+        //                replace some parts of the message with smileys.
 
         if (message.content.startsWith('render ')) {
             const params = message.content.split(' ');
