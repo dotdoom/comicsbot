@@ -8,8 +8,17 @@ export class Bot {
     constructor(renderer: Renderer) {
         this.renderer = renderer;
 
-        // TODO(dotdoom): debug? warn? rateLimit?
+        setInterval(() => {
+            console.log('Ping [1m]: ', this.client.pings);
+        }, 60 * 1000);
+
         this.client
+            .on('error', this.logGenericEvent('error'))
+            .on('debug', this.logGenericEvent('debug'))
+            .on('warn', this.logGenericEvent('warn'))
+            .on('disconnect', this.logGenericEvent('disconnect'))
+            .on('rateLimit', this.logGenericEvent('rateLimit'))
+            .on('reconnecting', this.logGenericEvent('reconnecting'))
             .on('message', this.message)
             .on('ready', () => {
                 this.client.guilds.forEach((guild) => {
@@ -26,6 +35,11 @@ export class Bot {
             .login(token);
 
     public destroy = () => this.client.destroy();
+
+    private logGenericEvent = (eventName: string) =>
+        (...args: any[]) => {
+            console.log('Event ', eventName, ' with args ', args);
+        };
 
     private message = async (message: discord.Message) => {
         if (message.author.id === this.client.user.id) {
