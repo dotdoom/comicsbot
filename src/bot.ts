@@ -5,6 +5,7 @@ enum Emoji {
     OK = "\u{1f44c}",
     ThumbsUp = "\u{1f44d}",
     ThumbsDown = "\u{1f44e}",
+    Cat = "\u{1f431}",
 }
 
 export class Bot {
@@ -47,6 +48,15 @@ export class Bot {
             console.log('Event ', eventName, ' with args ', args);
         };
 
+    // A very stupid way of cleaning up the message from backquotes. Putting a
+    // message in backquotes may be necessary when otherwise Discord interprets
+    // certain character sequences as smileys, e.g. in
+    // "en:furry:comic:new:0001", ":new:" turns into a Unicode emoji.
+    private plainText = (message: string) => message
+        .replace(/```[a-z]*/ig, '')
+        .replace(/`/g, '')
+        .trim();
+
     private message = async (message: discord.Message) => {
         if (message.author.id === this.client.user.id) {
             // Ignore message from self.
@@ -65,22 +75,21 @@ export class Bot {
             console.log(`Got a message ${message.content} [CLEAN:${message.cleanContent}] from user ${message.author.username} in channel ${channel.name} server ${channel.guild.name}`);
         }
 
-        /*if (message.isMentioned(this.client.user)) {
-        }*/
+        if (message.isMentioned(this.client.user)) {
+            message.react(Emoji.Cat);
+        }
 
-        // TODO(dotdoom): understand `quoted text` because otherwise Discord can
-        //                replace some parts of the message with smileys.
-
-        if (message.content.startsWith('render ')) {
-            message.react(Emoji.OK);
-
-            const params = message.content.split(' ');
+        const text = this.plainText(message.cleanContent);
+        if (text.startsWith('render ')) {
+            const params = text.split(' ');
             if (params.length != 2) {
                 return;
             }
             const id = params[1];
             console.log(`Rendering page ${id}`);
 
+            message.react(Emoji.OK);
+            message.channel.startTyping();
             try {
                 const rendered = await this.renderer.renderSinglePage(id);
                 if (rendered === undefined) {
@@ -122,9 +131,12 @@ export class Bot {
                     description += '*no images rendered (empty boxes list)*';
                 }
                 response.setDescription(description);
+
+                message.channel.stopTyping();
                 message.react(Emoji.ThumbsUp);
                 message.reply(response);
             } catch (e) {
+                message.channel.stopTyping();
                 message.react(Emoji.ThumbsDown);
                 message.reply(new discord.RichEmbed()
                     .setTitle('Exception caught')
