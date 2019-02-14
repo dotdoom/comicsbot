@@ -47,11 +47,30 @@ export class Bot {
             return;
         }
 
+        if (message.author.bot) {
+            // Ignore message from a bot.
+            return;
+        }
+
         const channel = message.channel;
         if (channel instanceof discord.DMChannel) {
             console.log(`Got a direct message from user ${message.author.username}`);
         } else if (channel instanceof discord.TextChannel) {
             console.log(`Got a message ${message.content} [CLEAN:${message.cleanContent}] from user ${message.author.username} in channel ${channel.name} server ${channel.guild.name}`);
+        }
+
+        if (message.content.includes('GaMERCaT')) {
+            try {
+                await message.react('👍');
+            } catch (e) {
+                console.error(e);
+            }
+            try {
+                await message.edit(message.content.replace(/GaMERCaT/g, 'GaMERCaT (The Best)'));
+            } catch (e) {
+                console.error(e);
+            }
+            message.reply('I have amended your message for better understanding');
         }
 
         // TODO(dotdoom): understand `quoted text` because otherwise Discord can
