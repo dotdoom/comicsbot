@@ -59,8 +59,8 @@ export class Bot {
             console.log(`Got a message ${message.content} [CLEAN:${message.cleanContent}] from user ${message.author.username} in channel ${channel.name} server ${channel.guild.name}`);
         }
 
-        if (message.content.includes('GaMERCaT')) {
-            message.react('👍');
+        if (message.isMentioned(this.client.user)) {
+            message.react('\u{1f44d}');  // Thumbs up.
         }
 
         // TODO(dotdoom): understand `quoted text` because otherwise Discord can
