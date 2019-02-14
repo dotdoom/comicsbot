@@ -132,11 +132,11 @@ export class Bot {
                 }
                 response.setDescription(description);
 
-                message.channel.stopTyping();
+                message.channel.stopTyping(true);
                 message.react(Emoji.ThumbsUp);
                 message.reply(response);
             } catch (e) {
-                message.channel.stopTyping();
+                message.channel.stopTyping(true);
                 message.react(Emoji.ThumbsDown);
                 message.reply(new discord.RichEmbed()
                     .setTitle('Exception caught')
