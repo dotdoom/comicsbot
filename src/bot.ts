@@ -132,16 +132,16 @@ export class Bot {
                 }
                 response.setDescription(description);
 
-                message.channel.stopTyping(true);
                 message.react(Emoji.ThumbsUp);
                 message.reply(response);
             } catch (e) {
-                message.channel.stopTyping(true);
                 message.react(Emoji.ThumbsDown);
                 message.reply(new discord.RichEmbed()
                     .setTitle('Exception caught')
                     .setColor(0xFF0000)
                     .setDescription(e.message));
+            } finally {
+                message.channel.stopTyping(true);
             }
         }
     }
