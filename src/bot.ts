@@ -60,17 +60,7 @@ export class Bot {
         }
 
         if (message.content.includes('GaMERCaT')) {
-            try {
-                await message.react('👍');
-            } catch (e) {
-                console.error(e);
-            }
-            try {
-                await message.edit(message.content.replace(/GaMERCaT/g, 'GaMERCaT (The Best)'));
-            } catch (e) {
-                console.error(e);
-            }
-            message.reply('I have amended your message for better understanding');
+            message.react('👍');
         }
 
         // TODO(dotdoom): understand `quoted text` because otherwise Discord can
@@ -125,9 +115,9 @@ export class Bot {
                     description += '*no images rendered (empty boxes list)*';
                 }
                 response.setDescription(description);
-                message.channel.send(response);
+                message.reply(response);
             } catch (e) {
-                message.channel.send(new discord.RichEmbed()
+                message.reply(new discord.RichEmbed()
                     .setTitle('Exception caught')
                     .setColor(0xFF0000)
                     .setDescription(e.message));
