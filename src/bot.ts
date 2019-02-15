@@ -80,6 +80,13 @@ export class Bot {
         }
 
         const text = this.plainText(message.cleanContent);
+
+        if (text == 'count20') {
+            for (let i = 0; i < 20; ++i) {
+                message.channel.send(`Message number ${i + 1}`);
+            }
+        }
+
         if (text.startsWith('render ')) {
             const params = text.split(' ');
             if (params.length != 2) {
