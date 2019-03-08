@@ -32,8 +32,14 @@ export class Bot {
                     console.log(`Joined Discord server: ${guild.name} ` +
                         `[${guild.region}] (owned by ${guild.owner.user.tag})`);
                     guild.channels.forEach((channel) => {
-                        console.log(` - channel ${channel.name}, permissions:` +
-                            ` ${channel.permissionsFor(guild.me)}`);
+                        const permissions = channel.permissionsFor(guild.me);
+                        let stringPermissions = 'N/A';
+                        if (permissions != null) {
+                            stringPermissions = permissions.toArray().join(',');
+                        }
+                        console.log(` - channel "${channel.name}", ` +
+                            `type: "${channel.type}", ` +
+                            `permissions: ${stringPermissions}`);
                     });
                 });
             });
