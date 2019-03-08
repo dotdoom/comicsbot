@@ -31,6 +31,10 @@ export class Bot {
                 this.client.guilds.forEach((guild) => {
                     console.log(`Joined Discord server: ${guild.name} ` +
                         `[${guild.region}] (owned by ${guild.owner.user.tag})`);
+                    guild.channels.forEach((channel) => {
+                        console.log(` - channel ${channel.name}, permissions:` +
+                            ` ${channel.permissionsFor(guild.me)}`);
+                    });
                 });
             });
     }
