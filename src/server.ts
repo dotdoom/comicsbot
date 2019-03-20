@@ -1,9 +1,9 @@
 import puppeteer from 'puppeteer';
 import * as xmlrpc from 'xmlrpc';
-import { Bot } from './src/bot';
-import { Doku } from './src/doku';
-import { onExit } from './src/on_exit';
-import { Renderer } from './src/render';
+import { Bot } from './bot';
+import { Doku } from './doku';
+import { onExit } from './on_exit';
+import { Renderer } from './render';
 
 // Used by our .service initfile to find the bot process.
 process.title = 'comicsbot';
@@ -18,7 +18,7 @@ interface Config {
 }
 
 (async () => {
-  let config: Config = require('../config.json');
+  let config: Config = require('../config/config.json');
 
   const doku = new Doku(xmlrpc.createClient({
     url: config.doku.baseUrl + 'lib/exe/xmlrpc.php',
@@ -28,11 +28,15 @@ interface Config {
 
   const browser = await puppeteer.launch({
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    handleSIGINT: false,
+    handleSIGTERM: false,
+    handleSIGHUP: false,
   });
   onExit(browser.close);
 
-  const render = new Renderer('../../render.js', doku, browser,
+  const render = new Renderer('../config/render.js', doku, browser,
     config.doku.baseUrl);
+
   const bot = new Bot(render);
   bot.connect(config.discordToken);
   onExit(bot.destroy);
