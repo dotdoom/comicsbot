@@ -21,10 +21,10 @@ export class Bot {
 
         this.client
             .on('error', this.logGenericEvent('error'))
-            .on('debug', this.logGenericEvent('debug'))
+            //.on('debug', this.logGenericEvent('debug'))
             .on('warn', this.logGenericEvent('warn'))
             .on('disconnect', this.logGenericEvent('disconnect'))
-            .on('rateLimit', this.logGenericEvent('rateLimit'))
+            //.on('rateLimit', this.logGenericEvent('rateLimit'))
             .on('reconnecting', this.logGenericEvent('reconnecting'))
             .on('message', this.message)
             .on('ready', () => {
@@ -32,14 +32,33 @@ export class Bot {
                     console.log(`Joined Discord server: ${guild.name} ` +
                         `[${guild.region}] (owned by ${guild.owner.user.tag})`);
                     guild.channels.forEach((channel) => {
-                        const permissions = channel.permissionsFor(guild.me);
-                        let stringPermissions = 'N/A';
-                        if (permissions != null) {
-                            stringPermissions = permissions.toArray().join(',');
+                        if (channel instanceof discord.TextChannel) {
+                            const permissions = channel.permissionsFor(guild.me);
+                            let stringPermissions = 'N/A';
+                            if (permissions != null) {
+                                // Remove boring permissions and print what's left.
+                                stringPermissions = permissions.remove(
+                                    discord.Permissions.FLAGS.CREATE_INSTANT_INVITE!,
+                                    discord.Permissions.FLAGS.VIEW_AUDIT_LOG!,
+                                    discord.Permissions.FLAGS.PRIORITY_SPEAKER!,
+                                    discord.Permissions.FLAGS.SEND_TTS_MESSAGES!,
+                                    discord.Permissions.FLAGS.READ_MESSAGE_HISTORY!,
+                                    discord.Permissions.FLAGS.MENTION_EVERYONE!,
+                                    discord.Permissions.FLAGS.USE_EXTERNAL_EMOJIS!,
+                                    discord.Permissions.FLAGS.CONNECT!,
+                                    discord.Permissions.FLAGS.SPEAK!,
+                                    discord.Permissions.FLAGS.MUTE_MEMBERS!,
+                                    discord.Permissions.FLAGS.DEAFEN_MEMBERS!,
+                                    discord.Permissions.FLAGS.MOVE_MEMBERS!,
+                                    discord.Permissions.FLAGS.USE_VAD!,
+                                    discord.Permissions.FLAGS.MANAGE_WEBHOOKS!,
+                                    discord.Permissions.FLAGS.MANAGE_EMOJIS!,
+                                ).toArray().join(',');
+                            }
+                            console.log(` - channel "${channel.name}", ` +
+                                `type: "${channel.type}", ` +
+                                `permissions: ${stringPermissions}`);
                         }
-                        console.log(` - channel "${channel.name}", ` +
-                            `type: "${channel.type}", ` +
-                            `permissions: ${stringPermissions}`);
                     });
                 });
             });
