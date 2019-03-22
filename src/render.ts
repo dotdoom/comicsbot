@@ -50,8 +50,7 @@ export class Renderer {
         const browserPage = await this.browser.newPage();
         try {
             let pages: RenderedBox[] = [];
-            // browserPage.setCookie(this.doku.getCookies());
-
+            await browserPage.setCookie(...this.doku.getCookies());
             await browserPage.goto(url);
             const boxes = await browserPage.evaluate(render.findBoxes, id);
             for (const box of boxes) {
