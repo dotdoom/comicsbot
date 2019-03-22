@@ -1,3 +1,4 @@
+import * as url from "url";
 import * as xmlrpc from 'xmlrpc';
 
 interface SearchAllPagesOptions {
@@ -14,6 +15,12 @@ interface Page {
     rev: number;
     mtime: Date;
     size: number;
+}
+
+interface Cookie {
+    name: string;
+    value: string;
+    domain?: string;
 }
 
 function utcSecondsToDate(seconds: number) {
@@ -58,12 +65,20 @@ export class Doku {
                     size: page.size,
                 });
 
-    public getCookies = () => {
+    public getCookies = (): Cookie[] => {
         const cookies = this.client.cookies;
         if (cookies !== undefined) {
-            return cookies.toString();
+            let domain = url.parse(this.client.options.url!).host;
+            return cookies.toString().split(';').map((keyAndValue) => {
+                let [key, value] = keyAndValue.split('=', 2);
+                return {
+                    name: key,
+                    value: value,
+                    domain: domain,
+                };
+            });
         }
-        return '';
+        return [];
     }
 
     private methodCall = (method: string, params: any[]) =>
