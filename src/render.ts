@@ -1,4 +1,5 @@
-import puppeteer from 'puppeteer';
+import * as path from "path";
+import puppeteer from "puppeteer";
 import { Doku } from "./doku";
 
 interface RenderOptions {
@@ -37,13 +38,14 @@ export class Renderer {
 
     renderSinglePage = async (
         id: string,
+        targetDirectory: string,
     ): Promise<RenderedBox[] | undefined> => {
         const render = this.loadRenderOptions();
-        const path = render.pagePath(id);
-        if (path === null) {
+        const pagePath = render.pagePath(id);
+        if (pagePath === null) {
             return undefined;
         }
-        const url = this.baseUrl + path;
+        const url = this.baseUrl + pagePath;
 
         const browserPage = await this.browser.newPage();
         try {
@@ -69,7 +71,8 @@ export class Renderer {
 
                 const originalScreenshotPath = screenshotOptions.path;
                 // TODO(dotdoom): replace with a real temporary file.
-                screenshotOptions.path = '/tmp/render-screenshot.png';
+                screenshotOptions.path = path.join(targetDirectory,
+                    path.basename(originalScreenshotPath!));
                 pages.push({
                     pageURL: url,
                     pageId: id,

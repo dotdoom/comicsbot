@@ -127,7 +127,7 @@ export class Bot {
             message.react(Emoji.OK);
             message.channel.startTyping();
             try {
-                const rendered = await this.renderer.renderSinglePage(id);
+                const rendered = await this.renderer.renderSinglePage(id, '/tmp');
                 if (rendered === undefined) {
                     message.channel.send(new discord.RichEmbed()
                         .setTitle('Page rejected')
