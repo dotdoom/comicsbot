@@ -20,12 +20,6 @@ interface Config {
 (async () => {
   let config: Config = require('../config/config.json');
 
-  const doku = new Doku(xmlrpc.createClient({
-    url: config.doku.baseUrl + 'lib/exe/xmlrpc.php',
-    cookies: true,
-  }));
-  await doku.login(config.doku.user, config.doku.password);
-
   const browser = await puppeteer.launch({
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
     handleSIGINT: false,
@@ -33,6 +27,16 @@ interface Config {
     handleSIGHUP: false,
   });
   onExit(browser.close);
+
+  // TODO(dotdoom): createClient vs createSecureClient based on protocol in URL.
+  const doku = new Doku(xmlrpc.createSecureClient({
+    url: config.doku.baseUrl + 'lib/exe/xmlrpc.php',
+    cookies: true,
+    // headers: {
+    //   'User-Agent': await browser.userAgent(),
+    // },
+  }));
+  await doku.login(config.doku.user, config.doku.password);
 
   const render = new Renderer('../config/render.js', doku, browser,
     config.doku.baseUrl);
