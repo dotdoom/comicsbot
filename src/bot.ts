@@ -128,36 +128,28 @@ export class Bot {
             message.channel.startTyping();
             try {
                 const rendered = await this.renderer.renderSinglePage(id, '/tmp');
-                if (rendered === undefined) {
+                if (!rendered.pageURL) {
                     message.channel.send(new discord.RichEmbed()
                         .setTitle('Page rejected')
-                        .setDescription('pagePath() returns "null"'));
+                        .setDescription('pageURLPath() returns "null"'));
                     return;
                 }
 
                 let response = new discord.RichEmbed();
-                response.setTitle(`Rendered page ${id}`);
+                response.setTitle(`Rendered page ${rendered.pageId} (${rendered.pageURL})`);
                 let description = '';
                 let imageAdded = false;
-                for (const page of rendered) {
-                    console.log('  rendered box ', page);
-
-                    if (page.box) {
-                        description += 'Box ' + JSON.stringify(page.box);
-                    } else {
-                        description += 'Full page';
-                    }
-
-                    description += ' would be saved to `' +
-                        page.originalScreenshotPath + '`\n';
-                    response.setURL(page.pageURL.href);
+                for (const page of rendered.boxes) {
+                    description += 'Box ' + JSON.stringify(page.clip);
+                    description += ' saved to `' + page.path + '`\n';
+                    response.setURL(rendered.pageURL.href);
 
                     if (imageAdded) {
                         description += '*more than 1 box rendered, only ' +
                             'the latest is attached*\n';
                     } else {
                         imageAdded = true;
-                        response.attachFile(page.screenshotPath);
+                        response.attachFile(page.path!);
                     }
                 }
 
@@ -173,7 +165,7 @@ export class Bot {
                 message.reply(new discord.RichEmbed()
                     .setTitle('Exception caught')
                     .setColor(0xFF0000)
-                    .setDescription(e.message));
+                    .setDescription(e.toString()));
             } finally {
                 message.channel.stopTyping(true);
             }

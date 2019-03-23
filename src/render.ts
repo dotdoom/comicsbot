@@ -1,22 +1,28 @@
+import * as mkdirp from "mkdirp";
 import * as path from "path";
 import puppeteer from "puppeteer";
 import { URL } from "url";
 import { Doku } from "./doku";
 
+interface FoundBoxes {
+    [screenshotFilename: string]: DOMRect;
+}
+
 interface RenderOptions {
     searchNamespaces: string[];
-    pagePath(id: string): string | null;
-    findBoxes(id: string): [][] | string[];
+    pageURLPath(id: string): string | null;
+    findBoxes(id: string): FoundBoxes;
 }
 
 interface RenderedBox {
-    // TODO(dotdoom): move these to higher-level struct.
-    pageId: string;
-    pageURL: URL;
+    clip?: puppeteer.BoundingBox;
+    path?: string;
+}
 
-    box: puppeteer.BoundingBox | undefined;
-    originalScreenshotPath: string;
-    screenshotPath: string;
+interface RenderedPage {
+    pageId: string;
+    pageURL?: URL;
+    boxes: RenderedBox[];
 }
 
 export class Renderer {
@@ -40,54 +46,36 @@ export class Renderer {
     renderSinglePage = async (
         id: string,
         targetDirectory: string,
-    ): Promise<RenderedBox[] | undefined> => {
+    ): Promise<RenderedPage> => {
+        let page: RenderedPage = {
+            pageId: id,
+            boxes: [],
+        }
         const render = this.loadRenderOptions();
-        const pagePath = render.pagePath(id);
-        if (pagePath === null) {
-            return undefined;
-        }
-        const url = new URL(pagePath, this.baseUrl);
+        const pageURLPath = render.pageURLPath(id);
+        if (pageURLPath) {
+            page.pageURL = new URL(pageURLPath, this.baseUrl);
 
-        const browserPage = await this.browser.newPage();
-        try {
-            let pages: RenderedBox[] = [];
-            await browserPage.setCookie(...this.doku.getCookies());
-            await browserPage.goto(url.href);
-            const boxes = await browserPage.evaluate(render.findBoxes, id);
-            for (const box of boxes) {
-                let screenshotOptions: puppeteer.ScreenshotOptions = {};
-                if (typeof box === "string") {
-                    screenshotOptions.fullPage = true;
-                    screenshotOptions.path = box;
-                } else {
-                    screenshotOptions.clip = {
-                        x: box[0],
-                        y: box[1],
-                        width: box[2],
-                        height: box[3],
+            const browserPage = await this.browser.newPage();
+            try {
+                await browserPage.setCookie(...this.doku.getCookies());
+                await browserPage.goto(page.pageURL.href);
+                const boxes = <FoundBoxes>(
+                    await browserPage.evaluate(render.findBoxes, id));
+                for (const screenshotFilename in boxes) {
+                    let screenshotOptions: puppeteer.ScreenshotOptions = {
+                        clip: boxes[screenshotFilename],
+                        path: path.join(targetDirectory, screenshotFilename),
                     };
-                    screenshotOptions.path = box[4];
+                    mkdirp.sync(path.dirname(screenshotOptions.path!));
+                    page.boxes.push(screenshotOptions);
+                    await browserPage.screenshot(screenshotOptions);
                 }
-
-                const originalScreenshotPath = screenshotOptions.path;
-                // TODO(dotdoom): replace with a real temporary file.
-                screenshotOptions.path = path.join(targetDirectory,
-                    path.basename(originalScreenshotPath!));
-                pages.push({
-                    pageURL: url,
-                    pageId: id,
-                    box: screenshotOptions.clip,
-                    originalScreenshotPath: <string>originalScreenshotPath,
-                    screenshotPath: <string>screenshotOptions.path,
-                });
-
-                await browserPage.screenshot(screenshotOptions);
+            } finally {
+                await browserPage.close();
             }
-
-            return pages;
-        } finally {
-            await browserPage.close();
         }
+        return page;
     }
 
     private loadRenderOptions = () => {

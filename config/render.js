@@ -4,7 +4,7 @@ exports.searchNamespaces = [
 ];
 
 // Turn page ID into path of a URL, or return null if we don't want this page.
-exports.pagePath = (id) => {
+exports.pageURLPath = (id) => {
   // id is in the form "ru:sci-fi:freefall:0001".
   if (/:[0-9]+$/.test(id)) {
     // If last part of id is only digits, turn id into
@@ -17,27 +17,27 @@ exports.pagePath = (id) => {
   return null;
 };
 
-// This function is special because it runs not in the bot, but inside a page
-// itself. DOM is accessible within this method. It returns a list of lists:
-//   [
-//     [x1, y1, width1, height1, path1],
-//     [x2, y2, width2, height2, path2],
+// This function is special because it runs *not* in the bot, but inside a page
+// itself. DOM is accessible within this method. It returns an Object:
+//   {
+//     [screenshotPath]: DOMRectJSON,
+//     [screenshotPath]: DOMRectJSON,
 //     ...
 //   ]
-// where path is a path to save screenshot to, and the rest is a bounding rect.
-// Since this function returns a list, it can save multiple screenshots from a
-// single page.
+// where screenshotPath is a path to save screenshot to, and DOMRectJSON is a
+// clipping rect with "x", "y", "width" and "height" properties. Since this
+// function returns an Object, we can save multiple screenshots from a single
+// page.
 exports.findBoxes = (id) => {
   // id is in the form "ru:sci-fi:freefall:0001". Since "*" is greedy, it will
   // capture all parts except the last.
   const match = id.match(/^(.*):(.*)$/);
 
-  // turn "ru:sci-fi:freefall" into "ru/sci-fi/freefall" which is a path on
+  // turn "ru:sci-fi:freefall" into "ru/sci-fi/freefall/u/" which is a path on
   // filesystem to store screenshot.
-  const path = match[1].replace(/:/g, '/');
-  // filename will be "0001.png".
-  const filename = match[2] + '.png';
-  const screenshotFileName = path + '/u/' + filename;
+  const screenshotDirectory = match[1].replace(/:/g, '/') + '/u/';
+  // screenshotFilename will be "0001.png".
+  const screenshotFilename = screenshotDirectory + match[2] + '.png';
 
   const container =
     document.querySelector('div.ct-container') ||
@@ -45,11 +45,10 @@ exports.findBoxes = (id) => {
   if (container) {
     // Render only container.
     const rect = container.getBoundingClientRect();
-    return [
-      [rect.x, rect.y, rect.width, rect.height, screenshotFileName],
-    ];
-  } else {
-    // As a fallback, render full page.
-    return [screenshotFileName];
+    return {
+      [screenshotFilename]: rect.toJSON(),
+    };
   }
+
+  throw 'Unable to find any image on page ' + id;
 }
