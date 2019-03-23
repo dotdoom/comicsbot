@@ -1,8 +1,8 @@
-import * as mkdirp from "mkdirp";
-import * as path from "path";
-import puppeteer from "puppeteer";
-import { URL } from "url";
-import { Doku } from "./doku";
+import * as mkdirp from 'mkdirp';
+import * as path from 'path';
+import puppeteer from 'puppeteer';
+import { URL } from 'url';
+import { Doku } from './doku';
 
 interface FoundBoxes {
     [screenshotFilename: string]: DOMRect;
@@ -50,7 +50,7 @@ export class Renderer {
         let page: RenderedPage = {
             pageId: id,
             boxes: [],
-        }
+        };
         const render = this.loadRenderOptions();
         const pageURLPath = render.pageURLPath(id);
         if (pageURLPath) {
