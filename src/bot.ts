@@ -1,4 +1,7 @@
 import * as discord from 'discord.js';
+import moment from 'moment';
+import { URL } from 'url';
+import { Doku } from './doku';
 import { Renderer } from './render';
 
 enum Emoji {
@@ -6,14 +9,17 @@ enum Emoji {
     ThumbsUp = "\u{1f44d}",
     ThumbsDown = "\u{1f44e}",
     Cat = "\u{1f431}",
+    Disappointed = "\u{1f61e}",
 }
 
 export class Bot {
-    private client: discord.Client = new discord.Client();
-    private renderer: Renderer;
+    private readonly client: discord.Client = new discord.Client();
+    private readonly renderer: Renderer;
+    private readonly doku: Doku;
 
-    constructor(renderer: Renderer) {
+    constructor(renderer: Renderer, doku: Doku) {
         this.renderer = renderer;
+        this.doku = doku;
 
         setInterval(() => {
             console.log('Ping [1m]: ', this.client.pings);
@@ -86,6 +92,45 @@ export class Bot {
         .replace(/`/g, '')
         .trim();
 
+    private parseWikiPages = (message: string) => {
+        const hostname = this.renderer.baseUrl.hostname;
+        let hostnameIndex: number = -1;
+        let pages = [];
+        while (
+            (hostnameIndex = message.indexOf(hostname, hostnameIndex + 1)) >= 0
+        ) {
+            pages.push(new URL(message
+                .substring(hostnameIndex + hostname.length)
+                .replace(/[^a-z0-9]?(\s|$).*/i, ''), this.renderer.baseUrl));
+        }
+        return pages;
+    }
+
+    private buildSinglePage = async (url: URL) => {
+        const id = url.pathname.substring(1).replace(/[/]/g, ':');
+        const pageInfo = await this.doku.getPageInfo(id);
+
+        let response = new discord.RichEmbed();
+        response.setTitle('`' + pageInfo.name + '`');
+        response.setURL(url.href);
+        response.setAuthor(pageInfo.author);
+
+        // TODO(dotdoom): figure out locale from guild region.
+        moment.locale('ru');
+        response.setDescription(moment(pageInfo.lastModified).fromNow());
+
+        const rendered = await this.renderer.renderSinglePage(id, '/tmp');
+        if (rendered.pageURL) {
+            for (const box of rendered.boxes) {
+                if (box.path) {
+                    response.attachFile(box.path);
+                }
+            }
+        }
+
+        return response;
+    }
+
     private message = async (message: discord.Message) => {
         if (message.author.id === this.client.user.id) {
             // Ignore message from self.
@@ -110,67 +155,15 @@ export class Bot {
 
         const text = this.plainText(message.cleanContent);
 
-        if (text == 'count20') {
-            for (let i = 0; i < 20; ++i) {
-                message.channel.send(`Message number ${i + 1}`);
-            }
-        }
-
-        if (text.startsWith('render ')) {
-            const params = text.split(' ');
-            if (params.length != 2) {
-                return;
-            }
-            const id = params[1];
-            console.log(`Rendering page ${id}`);
-
-            message.react(Emoji.OK);
-            message.channel.startTyping();
-            try {
-                const hrstart = process.hrtime();
-                const rendered = await this.renderer.renderSinglePage(id, '/tmp');
-                const hrend = process.hrtime(hrstart);
-
-                if (!rendered.pageURL) {
-                    message.channel.send(new discord.RichEmbed()
-                        .setTitle('Page rejected')
-                        .setDescription('pageURLPath() returns "null"'));
-                    return;
+        let pages = this.parseWikiPages(text);
+        if (pages.length) {
+            for (const page of pages) {
+                try {
+                    message.reply(await this.buildSinglePage(page));
+                } catch (e) {
+                    message.react(Emoji.Disappointed);
+                    console.error(e);
                 }
-
-                let response = new discord.RichEmbed();
-                response.setTitle(`Rendered page ${rendered.pageId} (${rendered.pageURL})`);
-                let description = `[${hrend[0] + hrend[1] / 1_000_000_000}s] `;
-                let imageAdded = false;
-                for (const page of rendered.boxes) {
-                    description += 'Box ' + JSON.stringify(page.clip);
-                    description += ' saved to `' + page.path + '`\n';
-                    response.setURL(rendered.pageURL.href);
-
-                    if (imageAdded) {
-                        description += '*more than 1 box rendered, only ' +
-                            'the latest is attached*\n';
-                    } else {
-                        imageAdded = true;
-                        response.attachFile(page.path!);
-                    }
-                }
-
-                if (!imageAdded) {
-                    description += '*no images rendered (empty boxes list)*';
-                }
-                response.setDescription(description);
-
-                message.react(Emoji.ThumbsUp);
-                message.reply(response);
-            } catch (e) {
-                message.react(Emoji.ThumbsDown);
-                message.reply(new discord.RichEmbed()
-                    .setTitle('Exception caught')
-                    .setColor(0xFF0000)
-                    .setDescription(e.toString()));
-            } finally {
-                message.channel.stopTyping(true);
             }
         }
     }

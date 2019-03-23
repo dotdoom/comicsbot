@@ -46,7 +46,7 @@ interface Config {
 
   const render = new Renderer('../config/render.js', doku, browser, baseUrl);
 
-  const bot = new Bot(render);
+  const bot = new Bot(render, doku);
   bot.connect(config.discordToken);
   onExit(bot.destroy);
 })();
