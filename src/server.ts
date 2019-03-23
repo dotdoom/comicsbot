@@ -30,7 +30,7 @@ interface Config {
   onExit(browser.close);
 
   let baseUrl = new URL(config.doku.baseUrl);
-  let xmlrpcConstructor = baseUrl.protocol == 'http'
+  let xmlrpcConstructor = baseUrl.protocol == 'http:'
     ? xmlrpc.createClient
     : xmlrpc.createSecureClient;
   let xmlrpcURL = new URL('lib/exe/xmlrpc.php', baseUrl);
