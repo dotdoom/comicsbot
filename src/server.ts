@@ -15,6 +15,7 @@ interface Config {
     user: string,
     password: string,
     baseUrl: string,
+    serverRoot: string,
   },
 }
 

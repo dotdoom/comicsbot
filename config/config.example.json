@@ -3,6 +3,7 @@
   "doku": {
     "user": "dokubot",
     "password": "supers3cr3t",
-    "baseUrl": "https://comicslate.org/"
+    "baseUrl": "https://comicslate.org/",
+    "serverRoot": "/var/www/comicslate.org"
   }
 }
