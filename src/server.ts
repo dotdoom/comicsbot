@@ -35,7 +35,7 @@ interface Config {
     : xmlrpc.createSecureClient;
   let xmlrpcURL = new URL('lib/exe/xmlrpc.php', baseUrl);
   const doku = new Doku(xmlrpcConstructor({
-    url: xmlrpcURL.toString(),
+    url: xmlrpcURL.href,
     cookies: true,
     // headers: {
     //   'User-Agent': await browser.userAgent(),

@@ -52,7 +52,7 @@ export class Renderer {
         try {
             let pages: RenderedBox[] = [];
             await browserPage.setCookie(...this.doku.getCookies());
-            await browserPage.goto(url.toString());
+            await browserPage.goto(url.href);
             const boxes = await browserPage.evaluate(render.findBoxes, id);
             for (const box of boxes) {
                 let screenshotOptions: puppeteer.ScreenshotOptions = {};

@@ -150,7 +150,7 @@ export class Bot {
 
                     description += ' would be saved to `' +
                         page.originalScreenshotPath + '`\n';
-                    response.setURL(page.pageURL.toString());
+                    response.setURL(page.pageURL.href);
 
                     if (imageAdded) {
                         description += '*more than 1 box rendered, only ' +
