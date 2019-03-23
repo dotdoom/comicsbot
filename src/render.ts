@@ -1,5 +1,6 @@
 import * as path from "path";
 import puppeteer from "puppeteer";
+import { URL } from "url";
 import { Doku } from "./doku";
 
 interface RenderOptions {
@@ -11,7 +12,7 @@ interface RenderOptions {
 interface RenderedBox {
     // TODO(dotdoom): move these to higher-level struct.
     pageId: string;
-    pageURL: string;
+    pageURL: URL;
 
     box: puppeteer.BoundingBox | undefined;
     originalScreenshotPath: string;
@@ -19,16 +20,16 @@ interface RenderedBox {
 }
 
 export class Renderer {
-    private renderOptionsFile: string;
-    private doku: Doku;
-    private browser: puppeteer.Browser;
-    private baseUrl: string;
+    readonly baseUrl: URL;
+    private readonly renderOptionsFile: string;
+    private readonly doku: Doku;
+    private readonly browser: puppeteer.Browser;
 
     constructor(
         renderOptionsFile: string,
         doku: Doku,
         browser: puppeteer.Browser,
-        baseUrl: string,
+        baseUrl: URL,
     ) {
         this.renderOptionsFile = renderOptionsFile;
         this.doku = doku;
@@ -45,13 +46,13 @@ export class Renderer {
         if (pagePath === null) {
             return undefined;
         }
-        const url = this.baseUrl + pagePath;
+        const url = new URL(pagePath, this.baseUrl);
 
         const browserPage = await this.browser.newPage();
         try {
             let pages: RenderedBox[] = [];
             await browserPage.setCookie(...this.doku.getCookies());
-            await browserPage.goto(url);
+            await browserPage.goto(url.toString());
             const boxes = await browserPage.evaluate(render.findBoxes, id);
             for (const box of boxes) {
                 let screenshotOptions: puppeteer.ScreenshotOptions = {};

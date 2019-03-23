@@ -1,5 +1,5 @@
 import puppeteer from 'puppeteer';
-import * as url from 'url';
+import { URL } from 'url';
 import * as xmlrpc from 'xmlrpc';
 import { Bot } from './bot';
 import { Doku } from './doku';
@@ -29,13 +29,13 @@ interface Config {
   });
   onExit(browser.close);
 
-  let baseUrl = url.parse(config.doku.baseUrl);
+  let baseUrl = new URL(config.doku.baseUrl);
   let xmlrpcConstructor = baseUrl.protocol == 'http'
     ? xmlrpc.createClient
     : xmlrpc.createSecureClient;
-
+  let xmlrpcURL = new URL('lib/exe/xmlrpc.php', baseUrl);
   const doku = new Doku(xmlrpcConstructor({
-    url: config.doku.baseUrl + 'lib/exe/xmlrpc.php',
+    url: xmlrpcURL.toString(),
     cookies: true,
     // headers: {
     //   'User-Agent': await browser.userAgent(),
@@ -43,8 +43,7 @@ interface Config {
   }));
   await doku.login(config.doku.user, config.doku.password);
 
-  const render = new Renderer('../config/render.js', doku, browser,
-    config.doku.baseUrl);
+  const render = new Renderer('../config/render.js', doku, browser, baseUrl);
 
   const bot = new Bot(render);
   bot.connect(config.discordToken);
