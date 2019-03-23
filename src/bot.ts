@@ -161,9 +161,7 @@ export class Bot {
                     }
                 }
 
-                if (imageAdded) {
-                    response.setImage('attachment://render-screenshot.png');
-                } else {
+                if (!imageAdded) {
                     description += '*no images rendered (empty boxes list)*';
                 }
                 response.setDescription(description);
