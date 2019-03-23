@@ -36,22 +36,22 @@ export class Doku {
         this.client = client;
     }
 
-    public login = async (
+    login = async (
         user: string,
         password: string,
     ): Promise<boolean> =>
         (await this.methodCall('dokuwiki.login', [user, password])) == true;
 
-    public getTime = async () => utcSecondsToDate(
+    getTime = async () => utcSecondsToDate(
         <number>(await this.methodCall('dokuwiki.getTime', [])));
 
-    public getTitle = async () =>
+    getTitle = async () =>
         <string>(await this.methodCall('dokuwiki.getTitle', []));
 
-    public getVersion = async () =>
+    getVersion = async () =>
         <string>(await this.methodCall('dokuwiki.getVersion', []));
 
-    public getPagelist = async (
+    getPagelist = async (
         namespace: string,
         options?: SearchAllPagesOptions,
     ) =>
@@ -65,7 +65,7 @@ export class Doku {
                     size: page.size,
                 });
 
-    public getCookies = (): Cookie[] => {
+    getCookies = (): Cookie[] => {
         const cookies = this.client.cookies;
         if (cookies !== undefined) {
             let domain = url.parse(this.client.options.url!).host;
