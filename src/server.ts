@@ -1,4 +1,5 @@
 import puppeteer from 'puppeteer';
+import * as url from 'url';
 import * as xmlrpc from 'xmlrpc';
 import { Bot } from './bot';
 import { Doku } from './doku';
@@ -28,8 +29,12 @@ interface Config {
   });
   onExit(browser.close);
 
-  // TODO(dotdoom): createClient vs createSecureClient based on protocol in URL.
-  const doku = new Doku(xmlrpc.createSecureClient({
+  let baseUrl = url.parse(config.doku.baseUrl);
+  let xmlrpcConstructor = baseUrl.protocol == 'http'
+    ? xmlrpc.createClient
+    : xmlrpc.createSecureClient;
+
+  const doku = new Doku(xmlrpcConstructor({
     url: config.doku.baseUrl + 'lib/exe/xmlrpc.php',
     cookies: true,
     // headers: {
