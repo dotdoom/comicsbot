@@ -5,5 +5,8 @@
     "password": "supers3cr3t",
     "baseUrl": "https://comicslate.org/",
     "serverRoot": "/var/www/comicslate.org"
+  },
+  "app": {
+    "port": 8081
   }
 }

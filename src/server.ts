@@ -1,6 +1,7 @@
 import puppeteer from 'puppeteer';
 import { URL } from 'url';
 import * as xmlrpc from 'xmlrpc';
+import { App } from './app';
 import { Bot } from './bot';
 import { Doku } from './doku';
 import { onExit } from './on_exit';
@@ -16,6 +17,9 @@ interface Config {
     password: string,
     baseUrl: string,
     serverRoot: string,
+  },
+  app: {
+    port: number
   },
 }
 
@@ -45,6 +49,8 @@ interface Config {
   await doku.login(config.doku.user, config.doku.password);
 
   const render = new Renderer('../config/render.js', doku, browser, baseUrl);
+
+  new App(xmlrpc.createServer(config.app, () => { }), render, doku);
 
   const bot = new Bot(render, doku);
   bot.connect(config.discordToken);
