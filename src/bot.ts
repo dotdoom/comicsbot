@@ -127,7 +127,10 @@ export class Bot {
             message.react(Emoji.OK);
             message.channel.startTyping();
             try {
+                const hrstart = process.hrtime();
                 const rendered = await this.renderer.renderSinglePage(id, '/tmp');
+                const hrend = process.hrtime(hrstart);
+
                 if (!rendered.pageURL) {
                     message.channel.send(new discord.RichEmbed()
                         .setTitle('Page rejected')
@@ -137,7 +140,7 @@ export class Bot {
 
                 let response = new discord.RichEmbed();
                 response.setTitle(`Rendered page ${rendered.pageId} (${rendered.pageURL})`);
-                let description = '';
+                let description = `[${hrend[0] + hrend[1] / 1_000_000_000}s] `;
                 let imageAdded = false;
                 for (const page of rendered.boxes) {
                     description += 'Box ' + JSON.stringify(page.clip);
