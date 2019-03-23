@@ -1,5 +1,13 @@
-import * as url from "url";
+import * as url from 'url';
 import * as xmlrpc from 'xmlrpc';
+
+// Fix for https://github.com/baalexander/node-xmlrpc/issues/152.
+// @ts-ignore
+xmlrpc.dateFormatter.constructor.ISO8601 = new RegExp(
+    '([0-9]{4})([-]?([0-9]{2}))([-]?([0-9]{2}))'
+    + '(T([0-9]{2})(((:?([0-9]{2}))?((:?([0-9]{2}))?([.]([0-9]+))?))?)'
+    + '(Z|([+-]([0-9]{2}(:?([0-9]{2}))?)))?)?'
+);
 
 interface SearchAllPagesOptions {
     /// Recursion level, 0 for all.
@@ -15,6 +23,14 @@ interface Page {
     rev: number;
     mtime: Date;
     size: number;
+    hash?: string;
+}
+
+interface PageInfo {
+    name: string;
+    lastModified: Date;
+    author: string;
+    version: number;
 }
 
 interface Cookie {
@@ -63,7 +79,11 @@ export class Doku {
                     // mtime is in UTC: https://bugs.dokuwiki.org/1625.html
                     mtime: utcSecondsToDate(page.mtime),
                     size: page.size,
+                    hash: page.hash,
                 });
+
+    getPageInfo = async (pagename: string) =>
+        <PageInfo>(await this.methodCall('wiki.getPageInfo', [pagename]));
 
     getCookies = (): Cookie[] => {
         const cookies = this.client.cookies;
