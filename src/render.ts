@@ -15,8 +15,8 @@ interface RenderOptions {
 }
 
 interface RenderedBox {
-    clip?: puppeteer.BoundingBox;
-    path?: string;
+    clip: puppeteer.BoundingBox;
+    path: string;
 }
 
 interface RenderedPage {
@@ -64,13 +64,13 @@ export class Renderer {
                 const boxes = <FoundBoxes>(
                     await browserPage.evaluate(render.findBoxes, id));
                 for (const screenshotFilename in boxes) {
-                    let screenshotOptions: puppeteer.ScreenshotOptions = {
+                    let box: RenderedBox = {
                         clip: boxes[screenshotFilename],
                         path: path.join(targetDirectory, screenshotFilename),
                     };
-                    mkdirp.sync(path.dirname(screenshotOptions.path!));
-                    page.boxes.push(screenshotOptions);
-                    await browserPage.screenshot(screenshotOptions);
+                    mkdirp.sync(path.dirname(box.path));
+                    page.boxes.push(box);
+                    await browserPage.screenshot(box);
                 }
             } finally {
                 await browserPage.close();
