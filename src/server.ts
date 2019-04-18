@@ -1,3 +1,4 @@
+import express from 'express';
 import puppeteer from 'puppeteer';
 import { URL } from 'url';
 import * as xmlrpc from 'xmlrpc';
@@ -50,7 +51,9 @@ interface Config {
 
   const render = new Renderer('../config/render.js', doku, browser, baseUrl);
 
-  new App(xmlrpc.createServer(config.app, () => { }), render, doku);
+  const app = express();
+  new App(app, render, doku);
+  app.listen(config.app.port);
 
   const bot = new Bot(render, doku);
   bot.connect(config.discordToken);
