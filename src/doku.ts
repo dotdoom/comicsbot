@@ -85,6 +85,9 @@ export class Doku {
     getPageInfo = async (pagename: string) =>
         <PageInfo>(await this.methodCall('wiki.getPageInfo', [pagename]));
 
+    getPage = (pagename: string) =>
+        <Promise<string>>this.methodCall('wiki.getPage', [pagename]);
+
     getCookies = (): Cookie[] => {
         const cookies = this.client.cookies;
         if (cookies !== undefined) {
