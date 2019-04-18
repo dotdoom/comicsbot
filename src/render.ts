@@ -47,6 +47,8 @@ export class Renderer {
         id: string,
         targetDirectory: string,
     ): Promise<RenderedPage> => {
+        console.info(`rendering page ${id} into ${targetDirectory} directory`);
+
         let page: RenderedPage = {
             pageId: id,
             boxes: [],
