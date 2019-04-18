@@ -58,7 +58,8 @@ export class Renderer {
 
             const browserPage = await this.browser.newPage();
             try {
-                await browserPage.setCookie(...this.doku.getCookies());
+                // TODO(dotdoom): uncomment when we have 18+ control in Discord.
+                //await browserPage.setCookie(...this.doku.getCookies());
                 await browserPage.goto(page.pageURL.href);
                 const boxes = <FoundBoxes>(
                     await browserPage.evaluate(render.findBoxes, id));
