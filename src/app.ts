@@ -56,17 +56,22 @@ const jsonApi = (handler: RequestHandler): RequestHandler => {
 }
 
 interface Comic {
-    // Data available from $language:menu.
     id: string;
     homePageURL: URL;
+
+    // Data available from $language:menu.
     category?: string;
     ratingColor?: string,
     isActive?: boolean,
 
     // Data that has to be extracted.
     name?: string;
-    numberOfStrips?: number;
     thumbnailURL?: URL;
+}
+
+interface ComicStrips {
+    storyStrips: string[];
+    bonusStrips: string[];
 }
 
 interface Strip extends PageInfo {
@@ -89,25 +94,41 @@ export class App {
             clientLanguage('ru'),
         );
 
-        app.get('/strips/:id', jsonApi(this.getStrip));
+        // DEPRECATED
+        app.get('/strips/:id', jsonApi(jsonApi((req, res) =>
+            this.getStrip(res.locals.language, req.params.id))));
         app.get('/strips/:id/render', jsonApi(this.renderStrip));
 
         let comicsCache: Comic[] | undefined;
         app.get('/comics', jsonApi(async (req, res) =>
             (comicsCache = comicsCache ||
-                await this.getComics(res.locals.language))));
-        app.get('/comics/:id', async (req, res) => {
+                await this.getComics(res.locals.language, req.params.id))));
+        app.get('/comics/:comicsId', jsonApi((req, res) =>
+            this.getComics(res.locals.language, req.params.comicsId)));
 
-        });
-        app.get('/updates/:timestamp', async (req, res) => {
-            res.json({});
-        });
+        app.get('/comics/:comicId/strips', jsonApi((req, res) =>
+            this.getStrips(res.locals.language, req.params.comicId)));
+        app.get('/comics/:comicId/strips/:stripId', jsonApi((req, res) =>
+            this.getStrip(res.locals.language,
+                req.params.comicId + ':' + req.params.stripId)));
+        app.get('/comics/:comicId/strips/:stripId/render',
+            jsonApi(this.renderStrip));
     }
 
-    private getStrip: RequestHandler = async (req, res) => {
-        const pageId = [res.locals.language, req.params.id].join(':');
-        const pageText = await this.doku.getPage(pageId);
+    private getStrips = async (
+        language: string,
+        comicId: string,
+    ): Promise<ComicStrips> => {
+        return {
+            storyStrips: ['0001', '0002', '0003', '0004', '0005', '0006',
+                '0007', '0008'],
+            bonusStrips: ['2525'],
+        };
+    }
 
+    private getStrip = async (language: string, id: string): Promise<Strip> => {
+        const pageId = [language, id].join(':');
+        const pageText = await this.doku.getPage(pageId);
         const strip: Strip = await this.doku.getPageInfo(pageId);
         const titleMatch = pageText.match(/[*][*]([^*]+)[*][*]/);
         if (titleMatch) {
@@ -118,7 +139,13 @@ export class App {
     }
 
     private renderStrip: RequestHandler = async (req, res) => {
-        const pageId = [res.locals.language, req.params.id].join(':');
+        const pageId = req.params.id ?
+            [res.locals.language, req.params.id].join(':') :
+            [
+                res.locals.language,
+                req.params.comicId,
+                req.params.stripId,
+            ].join(':');
 
         const dir = dirSync();
         try {
@@ -138,7 +165,14 @@ export class App {
     private pageURL = (id: string) => new URL('/' + id.replace(/:/g, '/'),
         this.baseUrl);
 
-    private processComic = async (
+    private createComicObject = (id: string): Comic => {
+        return {
+            id: id,
+            homePageURL: this.pageURL(id),
+        };
+    };
+
+    private getComic = async (
         language: string,
         comic: Comic,
     ): Promise<Comic> => {
@@ -153,8 +187,6 @@ export class App {
             ':)?(.*?)(:index)?$')).exec(comic.id);
         if (comicIdMatch) {
             comic.id = comicIdMatch[2];
-            comic.numberOfStrips = (await this.doku.getPagelist(
-                comicIdMatch[1] + comicIdMatch[2])).length;
         }
 
         let titleMatch = indexPage.match(/=([^=]+?)=/);
@@ -172,7 +204,7 @@ export class App {
         return comic;
     }
 
-    private parseComicsRating = (rating: string) => {
+    private parseComicRating = (rating: string) => {
         const isActive = rating.startsWith('@');
         return {
             ratingColor: rating.slice(1, -1),
@@ -180,7 +212,13 @@ export class App {
         };
     }
 
-    private getComics = async (language: string): Promise<Comic[]> => {
+    private getComics = async (
+        language: string,
+        id: string | undefined = undefined,
+    ): Promise<Comic[]> => {
+        if (!id) {
+            id = '';
+        }
         const menu = (await this.doku.getPage(`${language}: menu`)).split('\n');
         const comics: Promise<Comic>[] = [];
         let categoryName: string | undefined = undefined;
@@ -189,13 +227,14 @@ export class App {
             if (match = line.match(/<spoiler[|](.*)>/)) {
                 categoryName = match[1];
             } else if (match = line.match(/\[\[([^\]]+)\]\](.*)/)) {
-                const ratings = match[2].match(/[@*]\w+[@*]/g);
-                comics.push(this.processComic(language, {
-                    id: match[1],
-                    category: categoryName,
-                    homePageURL: this.pageURL(match[1]),
-                    ...(ratings ? this.parseComicsRating(ratings[0]) : null),
-                }));
+                if (match[1].indexOf(id) >= 0) {
+                    const ratings = match[2].match(/[@*]\w+[@*]/g);
+                    comics.push(this.getComic(language, {
+                        category: categoryName,
+                        ...this.createComicObject(match[1]),
+                        ...(ratings ? this.parseComicRating(ratings[0]) : {}),
+                    }));
+                }
             }
         }
         return Promise.all(comics);
