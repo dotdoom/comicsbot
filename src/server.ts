@@ -52,7 +52,7 @@ interface Config {
   const render = new Renderer('../config/render.js', doku, browser, baseUrl);
 
   const app = express();
-  new App(app, render, doku);
+  new App(app, render, doku, baseUrl);
   app.listen(config.app.port);
 
   const bot = new Bot(render, doku);

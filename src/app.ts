@@ -1,7 +1,9 @@
 import * as acceptLanguage from 'accept-language-parser';
 import * as bodyParser from 'body-parser';
+import escapeStringRegexp from 'escape-string-regexp';
 import { Application, RequestHandler } from 'express';
 import { dirSync } from 'tmp';
+import { URL } from 'url';
 import { Doku } from './doku';
 import { Renderer } from './render';
 
@@ -31,31 +33,31 @@ const preferredLanguage = (preferredLanguageCode: string): RequestHandler => {
     }
 }
 
-interface Comics {
+interface Comic {
+    // Data available from $language:menu.
     id: string;
-    name: string;
-    numberOfStrips: number;
-    homePageURL: string;
-    thumbnailURL: string;
-    rating: number;
-    updatedAt: Date;
-}
+    homePageURL: URL;
+    category?: string;
+    ratingColor?: string,
+    isActive?: boolean,
 
-interface ComicsCategory {
-    name: string;
-    id: string;
-    comicses: Comics[];
+    // Data that has to be extracted.
+    name?: string;
+    numberOfStrips?: number;
+    thumbnailURL?: URL;
 }
 
 export class App {
     private readonly app: Application;
     private readonly render: Renderer;
     private readonly doku: Doku;
+    private readonly baseUrl: URL;
 
-    constructor(app: Application, render: Renderer, doku: Doku) {
+    constructor(app: Application, render: Renderer, doku: Doku, baseUrl: URL) {
         this.app = app;
         this.render = render;
         this.doku = doku;
+        this.baseUrl = baseUrl;
 
         app.use(
             bodyParser.urlencoded({ extended: true }),
@@ -70,6 +72,9 @@ export class App {
         app.get('/comics', this.comics);
         app.get('/comics/:id', async (req, res) => {
 
+        });
+        app.get('/updates/:timestamp', async (req, res) => {
+            res.json({});
         });
     }
 
@@ -100,82 +105,82 @@ export class App {
     }
 
     private comics: RequestHandler = async (req, res) => {
-        res.json(this.parseMenuPage(
-            res.locals.language,
-            await this.doku.getPage(`${res.locals.language}:menu`),
-        ));
+        res.json(await this.getComics(res.locals.language));
     }
 
-    private comicsRateToInt = (rate: string) => {
-        switch (rate) {
-            case 'GOLD': return 5;
-            case 'SILV': return 4;
-            case 'BRNZ': return 3;
-            case 'PUST': return 2;
-            default: return 1;
-        }
-    }
+    private pageURL = (id: string) => new URL('/' + id.replace(/:/g, '/'),
+        this.baseUrl);
 
-    private parseMenuPage = (
+    private processComic = async (
         language: string,
-        menu: string,
-    ): ComicsCategory[] => {
-        const categories: ComicsCategory[] = [];
+        comic: Comic,
+    ): Promise<Comic> => {
+        const indexPage = await this.doku.getPage(comic.id);
 
-        for (let categoryText of menu.split('<spoiler|')) {
-            const categoryParser = /([^>]+)>([\S\s]*)/m.exec(categoryText);
-            if (!categoryParser) {
-                continue;
-            }
-            const comicsParserRe =
-                /\[\[([^\]?]+)\]\](\s*[@*]([a-z]+)[@*])*/gi;
-
-            const category: ComicsCategory = {
-                name: categoryParser[1],
-                id: '',
-                comicses: [],
-            };
-            categories.push(category);
-
-            let longestPath: string[] = [];
-            while (true) {
-                const comicsParser = comicsParserRe.exec(categoryParser[2]);
-                if (!comicsParser) {
-                    break;
-                }
-
-                const comicsId = comicsParser[1].split(':');
-                if (comicsId[0] == language) {
-                    comicsId.splice(0, 1);
-                }
-
-                if (longestPath.length == 0) {
-                    longestPath = comicsId;
-                }
-
-                for (
-                    let i = 0;
-                    i < longestPath.length && i < comicsId.length;
-                    ++i) {
-                    if (longestPath[i] != comicsId[i]) {
-                        longestPath.splice(i);
-                    }
-                }
-
-                category.comicses.push({
-                    id: comicsId.join(':'),
-                    rating: this.comicsRateToInt(comicsParser[3]),
-                    name: 'PLACEHOLDER NAME',
-                    numberOfStrips: 42,
-                    homePageURL: 'https://comicslate.org/' + language + '/' +
-                        comicsId.join('/'),
-                    thumbnailURL: 'PLACEHOLDER URL',
-                    updatedAt: new Date(),
-                });
-            }
-            category.id = longestPath.join(':');
+        // When comic arrives to us, its id is normally in the form:
+        //   $language:$comicId[:index]
+        // we need $language and :index to form a URL, and otherwise throw them
+        // away.
+        for (
+            let comicIdParser = (new RegExp(
+                '^(' +
+                escapeStringRegexp(language) +
+                ':)?(.*?)(:index)?$')).exec(comic.id); comicIdParser;) {
+            comic.id = comicIdParser[2];
+            comic.numberOfStrips = (await this.doku.getPagelist(
+                comicIdParser[1] + comicIdParser[2])).length;
+            break;
         }
 
-        return categories;
+        for (let titleMatch = indexPage.match(/=([^=]+?)=/); titleMatch;) {
+            comic.name = titleMatch[1].trim();
+            break;
+        }
+
+        for (
+            let imageMatch = indexPage.match(
+                /{{([^}]+[.](png|jpe?g)[^|}]+)[^}]*}}/);
+            imageMatch;) {
+            comic.thumbnailURL = this.pageURL(
+                ['_media', comic.id, imageMatch[1].trim()].join('/'));
+            break;
+        }
+
+        return comic;
+    }
+
+    private parseComicsRating = (rating: string) => {
+        const isActive = rating.startsWith('@');
+        return {
+            ratingColor: rating.slice(1, -1),
+            isActive: isActive,
+        };
+    }
+
+    private comicsCache?: Comic[];
+
+    private getComics = async (language: string): Promise<Comic[]> => {
+        if (this.comicsCache) {
+            return this.comicsCache;
+        }
+
+        const menu = (await this.doku.getPage(`${language}:menu`)).split('\n');
+        const comics: Promise<Comic>[] = [];
+        let categoryName: string | undefined = undefined;
+        for (const line of menu) {
+            let match: RegExpMatchArray | null;
+            if (match = line.match(/<spoiler[|](.*)>/)) {
+                categoryName = match[1];
+            } else if (match = line.match(/\[\[([^\]]+)\]\](.*)/)) {
+                const ratings = match[2].match(/[@*]\w+[@*]/g);
+                comics.push(this.processComic(language, {
+                    id: match[1],
+                    category: categoryName,
+                    homePageURL: this.pageURL(match[1]),
+                    ...(ratings ? this.parseComicsRating(ratings[0]) : null),
+                }));
+            }
+        }
+        return (this.comicsCache = await Promise.all(comics));
     }
 }
