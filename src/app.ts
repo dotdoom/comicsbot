@@ -3,6 +3,7 @@ import * as bodyParser from 'body-parser';
 import escapeStringRegexp from 'escape-string-regexp';
 import { Application, RequestHandler } from 'express';
 import { dirSync } from 'tmp';
+import { URL } from 'url';
 import { Doku, PageInfo } from './doku';
 import { Renderer } from './render';
 
