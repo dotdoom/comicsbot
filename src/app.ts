@@ -230,6 +230,9 @@ export class App {
             let match: RegExpMatchArray | null;
             if (match = line.match(/<spoiler[|](.*)>/)) {
                 categoryName = match[1];
+            } else if (line.indexOf('add?do=edit') >= 0) {
+                // "Add new comics" line, ignore.
+                continue;
             } else if (match = line.match(/\[\[([^\]]+)\]\](.*)/)) {
                 if (match[1].indexOf(id) >= 0) {
                     const ratings = match[2].match(/[@*]\w+[@*]/g);
