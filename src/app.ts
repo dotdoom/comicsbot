@@ -94,11 +94,6 @@ export class App {
             clientLanguage('ru'),
         );
 
-        // DEPRECATED
-        app.get('/strips/:id', jsonApi(jsonApi((req, res) =>
-            this.getStrip(res.locals.language, req.params.id))));
-        app.get('/strips/:id/render', jsonApi(this.renderStrip));
-
         let comicsCache: Comic[] | undefined;
         app.get('/comics', jsonApi(async (req, res) =>
             (comicsCache = comicsCache ||
@@ -109,8 +104,11 @@ export class App {
         app.get('/comics/:comicId/strips', jsonApi((req, res) =>
             this.getStrips(res.locals.language, req.params.comicId)));
         app.get('/comics/:comicId/strips/:stripId', jsonApi((req, res) =>
-            this.getStrip(res.locals.language,
-                req.params.comicId + ':' + req.params.stripId)));
+            this.getStrip(
+                res.locals.language,
+                req.params.comicId,
+                req.params.stripId,
+            )));
         app.get('/comics/:comicId/strips/:stripId/render',
             jsonApi(this.renderStrip));
     }
@@ -119,15 +117,21 @@ export class App {
         language: string,
         comicId: string,
     ): Promise<ComicStrips> => {
+        const comicIdPrefix = [language, comicId].join(':');
         return {
-            storyStrips: ['0001', '0002', '0003', '0004', '0005', '0006',
-                '0007', '0008'],
-            bonusStrips: ['2525'],
+            storyStrips: (await this.doku.getPagelist(comicIdPrefix))
+                .map((s) => s.id.substring(comicIdPrefix.length + 1))
+                .filter((s) => s.match(/^\d+$/)),
+            bonusStrips: [],
         };
     }
 
-    private getStrip = async (language: string, id: string): Promise<Strip> => {
-        const pageId = [language, id].join(':');
+    private getStrip = async (
+        language: string,
+        comicId: string,
+        stripId: string,
+    ): Promise<Strip> => {
+        const pageId = [language, comicId, stripId].join(':');
         const pageText = await this.doku.getPage(pageId);
         const strip: Strip = await this.doku.getPageInfo(pageId);
         const titleMatch = pageText.match(/[*][*]([^*]+)[*][*]/);
@@ -162,13 +166,13 @@ export class App {
         }
     }
 
-    private pageURL = (id: string) => new URL('/' + id.replace(/:/g, '/'),
-        this.baseUrl);
+    private pageURL = (id: string) =>
+        new URL('/' + id.replace(/:/g, '/'), this.baseUrl);
 
-    private createComicObject = (id: string): Comic => {
+    private createComicObject = (indexId: string): Comic => {
         return {
-            id: id,
-            homePageURL: this.pageURL(id),
+            id: indexId,
+            homePageURL: this.pageURL(indexId),
         };
     };
 
