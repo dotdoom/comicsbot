@@ -47,9 +47,9 @@ const jsonApi = (handler: RequestHandler): RequestHandler => {
             console.error(
                 'Error while processing', req.url,
                 '\n-> PARAMS:', req.params,
-                '\n -> LOCALS:', res.locals,
-                '\n -> QUERY :', req.query,
-                '\n -> ', e.toString(), e.stack);
+                '\n-> LOCALS:', res.locals,
+                '\n-> QUERY :', req.query,
+                '\n-> ', e.toString(), '\n', e.stack);
             res.status(503).json(e.toString());
         }
     };
