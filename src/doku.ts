@@ -26,7 +26,7 @@ interface Page {
     hash?: string;
 }
 
-interface PageInfo {
+export interface PageInfo {
     name: string;
     lastModified: Date;
     author: string;
