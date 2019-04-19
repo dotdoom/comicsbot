@@ -63,10 +63,10 @@ export class App {
             preferredLanguage('ru'),
         );
 
-        app.get('/strip/:id', async (req, res) => {
+        app.get('/strips/:id', async (req, res) => {
             res.json({});
         });
-        app.get('/strip/:id/render', this.stripRender);
+        app.get('/strips/:id/render', this.stripRender);
         app.get('/comics', this.comics);
         app.get('/comics/:id', async (req, res) => {
 
