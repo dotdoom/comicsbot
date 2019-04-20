@@ -10,5 +10,5 @@ exports.findRect = () => {
     return container.getBoundingClientRect().toJSON();
   }
 
-  throw 'Unable to find any image on page ' + id;
+  throw 'Unable to find any image!';
 }
