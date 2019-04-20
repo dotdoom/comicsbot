@@ -131,7 +131,7 @@ export class Bot {
         let response = new discord.RichEmbed();
         response.setTitle(
             '`' +
-            `${comic.category} | ${comic.name} ` +
+            `${comic.categoryName} | ${comic.name} ` +
             '` ' + `${comic.isActive ? Emoji.GlowingStar : Emoji.Star}` + ' `' +
             `${strip.title || strip.name}` +
             '`'

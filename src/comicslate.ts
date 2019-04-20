@@ -12,7 +12,6 @@ interface Comic extends ComicRating {
     homePageURL: URL;
 
     // Data available from $language:menu.
-    category?: string;
     categoryName?: string;
 
     // Data that has to be extracted.
@@ -132,7 +131,6 @@ export class Comicslate {
         const comicTemplate: Comic = {
             id: menuEntry.replace(/:index$/, ''),
             homePageURL: this.pageURL(menuEntry),
-            category: categoryName,
             categoryName: categoryName,
         }
 
