@@ -53,15 +53,21 @@ interface Config {
   const render = new Renderer('../config/render.js', browser);
 
   const comicslate = new Comicslate(doku, baseUrl);
+
+  console.log('Initializing Wiki...');
   await comicslate.initialized;
 
+  console.log('Starting API server...');
   const app = express();
   new App(app, render, comicslate);
   app.listen(config.app.port);
 
   if (config.discordToken) {
+    console.log('Starting Discord bot...');
     const bot = new Bot(render, comicslate, baseUrl);
     bot.connect(config.discordToken);
     onExit(bot.destroy);
   }
+
+  console.log('Started!');
 })();
