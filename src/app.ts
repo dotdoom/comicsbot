@@ -134,7 +134,7 @@ export class App {
     ): Promise<Strip> => {
         const pageId = [language, comicId, stripId].join(':');
         const strip: Strip = {
-            url: this.pageURL(pageId),
+            url: this.pageURL(pageId, true),
             ...await this.doku.getPageInfo(pageId),
         }
 
@@ -171,8 +171,13 @@ export class App {
         }
     }
 
-    private pageURL = (id: string) =>
-        new URL('/' + id.replace(/:/g, '/'), this.baseUrl);
+    private pageURL = (id: string, html: boolean = false) => {
+        const url = new URL('/' + id.replace(/:/g, '/'), this.baseUrl);
+        if (html) {
+            url.searchParams.set('do', 'export_xhtml');
+        }
+        return url;
+    }
 
     private createComicObject = (indexId: string): Comic => {
         return {
