@@ -98,9 +98,7 @@ export class App {
         let comicsCache: Comic[] | undefined;
         app.get('/comics', jsonApi(async (req, res) =>
             (comicsCache = comicsCache ||
-                await this.getComics(res.locals.language, req.params.id))));
-        app.get('/comics/:comicsId', jsonApi((req, res) =>
-            this.getComics(res.locals.language, req.params.comicsId)));
+                await this.getComics(res.locals.language))));
 
         app.get('/comics/:comicId/strips', jsonApi((req, res) =>
             this.getStrips(res.locals.language, req.params.comicId)));
@@ -226,13 +224,7 @@ export class App {
         };
     }
 
-    private getComics = async (
-        language: string,
-        id: string | undefined = undefined,
-    ): Promise<Comic[]> => {
-        if (!id) {
-            id = '';
-        }
+    private getComics = async (language: string): Promise<Comic[]> => {
         const menu = (await this.doku.getPage(`${language}: menu`)).split('\n');
         const comics: Promise<Comic>[] = [];
         let categoryName: string | undefined = undefined;
@@ -244,14 +236,12 @@ export class App {
                 // "Add new comics" line, ignore.
                 continue;
             } else if (match = line.match(/\[\[([^\]]+)\]\](.*)/)) {
-                if (match[1].indexOf(id) >= 0) {
-                    const ratings = match[2].match(/[@*]\w+[@*]/g);
-                    comics.push(this.getComic(language, {
-                        category: categoryName,
-                        ...this.createComicObject(match[1]),
-                        ...(ratings ? this.parseComicRating(ratings[0]) : {}),
-                    }));
-                }
+                const ratings = match[2].match(/[@*]\w+[@*]/g);
+                comics.push(this.getComic(language, {
+                    category: categoryName,
+                    ...this.createComicObject(match[1]),
+                    ...(ratings ? this.parseComicRating(ratings[0]) : {}),
+                }));
             }
         }
         return Promise.all(comics);
