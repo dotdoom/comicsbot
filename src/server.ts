@@ -4,6 +4,7 @@ import { URL } from 'url';
 import * as xmlrpc from 'xmlrpc';
 import { App } from './app';
 import { Bot } from './bot';
+import { Comicslate } from './comicslate';
 import { Doku } from './doku';
 import { onExit } from './on_exit';
 import { Renderer } from './render';
@@ -52,7 +53,7 @@ interface Config {
   const render = new Renderer('../config/render.js', doku, browser, baseUrl);
 
   const app = express();
-  new App(app, render, doku, baseUrl);
+  new App(app, render, new Comicslate(doku, baseUrl));
   app.listen(config.app.port);
 
   const bot = new Bot(render, doku);
