@@ -1,5 +1,6 @@
 import * as discord from 'discord.js';
 import moment from 'moment';
+import tmp from 'tmp';
 import { URL } from 'url';
 import { Comicslate } from './comicslate';
 import { Renderer } from './render';
@@ -18,10 +19,12 @@ export class Bot {
     private readonly client: discord.Client = new discord.Client();
     private readonly renderer: Renderer;
     private readonly comicslate: Comicslate;
+    private readonly baseUrl: URL;
 
-    constructor(renderer: Renderer, comicslate: Comicslate) {
+    constructor(renderer: Renderer, comicslate: Comicslate, baseUrl: URL) {
         this.renderer = renderer;
         this.comicslate = comicslate;
+        this.baseUrl = baseUrl;
 
         setInterval(() => {
             console.log('Ping [1m]: ', this.client.pings);
@@ -95,7 +98,7 @@ export class Bot {
         .trim();
 
     private parseWikiPages = (message: string) => {
-        const hostname = this.renderer.baseUrl.hostname;
+        const hostname = this.baseUrl.hostname;
         let hostnameIndex: number = -1;
         let pages = [];
         while (
@@ -103,7 +106,7 @@ export class Bot {
         ) {
             pages.push(new URL(message
                 .substring(hostnameIndex + hostname.length)
-                .replace(/[^a-z0-9]?(\s|$).*/i, ''), this.renderer.baseUrl));
+                .replace(/[^a-z0-9]?(\s|$).*/i, ''), this.baseUrl));
         }
         return pages;
     }
@@ -140,14 +143,12 @@ export class Bot {
         moment.locale('ru');
         response.setDescription(moment(strip.lastModified).fromNow());
 
-        const rendered = await this.renderer.renderSinglePage(id!.toString(),
-            '/tmp');
-        if (rendered.pageURL) {
-            for (const box of rendered.boxes) {
-                if (box.path) {
-                    response.attachFile(box.path);
-                }
-            }
+        const dir = tmp.dirSync();
+        try {
+            response.attachFile(
+                (await this.renderer.renderSinglePage(url, dir.name)).path);
+        } finally {
+            dir.removeCallback();
         }
 
         return response;

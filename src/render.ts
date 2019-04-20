@@ -1,84 +1,60 @@
 import * as mkdirp from 'mkdirp';
-import * as path from 'path';
+import path from 'path';
 import puppeteer from 'puppeteer';
 import { URL } from 'url';
-import { Doku } from './doku';
-
-interface FoundBoxes {
-    [screenshotFilename: string]: DOMRect;
-}
 
 interface RenderOptions {
-    searchNamespaces: string[];
-    pageURLPath(id: string): string | null;
-    findBoxes(id: string): FoundBoxes;
+    findRect(id: string): DOMRect;
 }
 
-interface RenderedBox {
+interface RenderedPage {
     clip: puppeteer.BoundingBox;
     path: string;
 }
 
-interface RenderedPage {
-    pageId: string;
-    pageURL?: URL;
-    boxes: RenderedBox[];
-}
-
 export class Renderer {
-    readonly baseUrl: URL;
     private readonly renderOptionsFile: string;
-    private readonly doku: Doku;
     private readonly browser: puppeteer.Browser;
 
     constructor(
         renderOptionsFile: string,
-        doku: Doku,
         browser: puppeteer.Browser,
-        baseUrl: URL,
     ) {
         this.renderOptionsFile = renderOptionsFile;
-        this.doku = doku;
         this.browser = browser;
-        this.baseUrl = baseUrl;
     }
 
     renderSinglePage = async (
-        id: string,
-        targetDirectory: string,
+        url: URL,
+        baseDirectory: string,
     ): Promise<RenderedPage> => {
-        console.info(`rendering page ${id} into ${targetDirectory} directory`);
-
-        let page: RenderedPage = {
-            pageId: id,
-            boxes: [],
-        };
         const render = this.loadRenderOptions();
-        const pageURLPath = render.pageURLPath(id);
-        if (pageURLPath) {
-            page.pageURL = new URL(pageURLPath, this.baseUrl);
+        const browserPage = await this.browser.newPage();
+        try {
+            // TODO(dotdoom): when we have 18+ control in Discord.
+            //await browserPage.setCookie(...this.doku.getCookies());
+            await browserPage.goto(url.href);
 
-            const browserPage = await this.browser.newPage();
-            try {
-                // TODO(dotdoom): uncomment when we have 18+ control in Discord.
-                //await browserPage.setCookie(...this.doku.getCookies());
-                await browserPage.goto(page.pageURL.href);
-                const boxes = <FoundBoxes>(
-                    await browserPage.evaluate(render.findBoxes, id));
-                for (const screenshotFilename in boxes) {
-                    let box: RenderedBox = {
-                        clip: boxes[screenshotFilename],
-                        path: path.join(targetDirectory, screenshotFilename),
-                    };
-                    mkdirp.sync(path.dirname(box.path));
-                    page.boxes.push(box);
-                    await browserPage.screenshot(box);
-                }
-            } finally {
-                await browserPage.close();
-            }
+            const targetDirectory = path.join(
+                path.dirname(path.join(baseDirectory, url.pathname)),
+                'u',
+            );
+
+            const renderedPage: RenderedPage = {
+                clip: <DOMRect>(await browserPage.evaluate(render.findRect)),
+                path: path.join(
+                    targetDirectory,
+                    path.basename(url.pathname) + '.png',
+                ),
+            };
+            console.info(`rendering page ${url} into ${renderedPage.path}`);
+
+            mkdirp.sync(targetDirectory);
+            await browserPage.screenshot(renderedPage);
+            return renderedPage;
+        } finally {
+            await browserPage.close();
         }
-        return page;
     }
 
     private loadRenderOptions = () => {

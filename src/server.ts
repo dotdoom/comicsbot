@@ -50,7 +50,7 @@ interface Config {
   }));
   await doku.login(config.doku.user, config.doku.password);
 
-  const render = new Renderer('../config/render.js', doku, browser, baseUrl);
+  const render = new Renderer('../config/render.js', browser);
 
   const comicslate = new Comicslate(doku, baseUrl);
   await comicslate.initialized;
@@ -59,7 +59,9 @@ interface Config {
   new App(app, render, comicslate);
   app.listen(config.app.port);
 
-  const bot = new Bot(render, comicslate);
-  bot.connect(config.discordToken);
-  onExit(bot.destroy);
+  if (config.discordToken) {
+    const bot = new Bot(render, comicslate, baseUrl);
+    bot.connect(config.discordToken);
+    onExit(bot.destroy);
+  }
 })();

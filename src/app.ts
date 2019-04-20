@@ -1,7 +1,7 @@
 import * as acceptLanguage from 'accept-language-parser';
 import * as bodyParser from 'body-parser';
 import { Application, RequestHandler } from 'express';
-import { dirSync } from 'tmp';
+import tmp from 'tmp';
 import { Comicslate } from './comicslate';
 import { Renderer } from './render';
 
@@ -136,22 +136,15 @@ export class App {
     }*/
 
     private renderStrip: RequestHandler = async (req, res) => {
-        const pageId = [
+        const pageUrl = await this.comicslate.pageURL([
             res.locals.language,
             req.params.comicId,
             req.params.stripId,
-        ].join(':');
-
-        const dir = dirSync();
+        ].join(':'), true);
+        const dir = tmp.dirSync();
         try {
-            const page = await this.render.renderSinglePage(pageId, dir.name);
-            if (!page.pageURL) {
-                throw new Error('Page URL can not be computed')
-            }
-            if (page.boxes.length != 1) {
-                throw new Error(`${page.boxes.length} boxes found`);
-            }
-            res.sendFile(page.boxes[0].path);
+            res.sendFile(
+                (await this.render.renderSinglePage(pageUrl, dir.name)).path);
         } finally {
             dir.removeCallback();
         }
