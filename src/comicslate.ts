@@ -1,15 +1,19 @@
-import escapeStringRegexp from 'escape-string-regexp';
 import { URL } from 'url';
 import * as doku from './doku';
 
-interface Comic {
+interface ComicRating {
+    // Data available from $language:menu.
+    ratingColor?: string,
+    isActive?: boolean,
+}
+
+interface Comic extends ComicRating {
     id: string;
     homePageURL: URL;
 
     // Data available from $language:menu.
     category?: string;
-    ratingColor?: string,
-    isActive?: boolean,
+    categoryName?: string;
 
     // Data that has to be extracted.
     name?: string;
@@ -18,7 +22,6 @@ interface Comic {
 
 interface ComicStrips {
     storyStrips: string[];
-    bonusStrips: string[];
 }
 
 interface Strip extends doku.PageInfo {
@@ -27,9 +30,9 @@ interface Strip extends doku.PageInfo {
 }
 
 class PageId {
-    readonly language: string;
-    readonly comicId: string;
-    readonly stripId?: string;
+    language: string;
+    comicId: string;
+    stripId?: string;
 
     constructor(language: string, comicId: string, stripId?: string) {
         this.language = language;
@@ -43,15 +46,32 @@ class PageId {
 }
 
 export class Comicslate {
+    readonly initialized: Promise<void>;
+
     private readonly doku: doku.Doku;
     private readonly baseUrl: URL;
     private readonly comicsCache: {
         [language: string]: Comic[];
     } = {};
 
+    private static readonly menuPage = ':menu';
+
     constructor(doku: doku.Doku, baseUrl: URL) {
         this.doku = doku;
         this.baseUrl = baseUrl;
+
+        this.initialized = this.scanAllComics();
+        setInterval(this.scanAllComics, 10 * 60 * 1000);
+    }
+
+    private scanAllComics = async () => {
+        for (const page of (await this.doku.getPagelist('', { depth: 2 }))) {
+            if (page.id.endsWith(Comicslate.menuPage)) {
+                const language = page.id.slice(0, -Comicslate.menuPage.length);
+                this.comicsCache[language] = await this.fetchMenu(language);
+                console.log(`${language}:${this.comicsCache[language].length}`);
+            }
+        }
     }
 
     getStrips = async (
@@ -63,7 +83,6 @@ export class Comicslate {
             storyStrips: (await this.doku.getPagelist(comicIdPrefix))
                 .map((s) => s.id.substring(comicIdPrefix.length + 1))
                 .filter((s) => s.match(/^\d+$/)),
-            bonusStrips: [],
         };
     }
 
@@ -87,43 +106,67 @@ export class Comicslate {
         return strip;
     }
 
-    private createComicObject = (indexId: string): Comic => {
-        return {
-            id: indexId,
-            homePageURL: this.pageURL(indexId),
-        };
-    };
+    getComics = (language: string) => this.comicsCache[language];
 
-    private getComic = async (
+    getComic = (language: string, comicId: string) => {
+        const comics = this.getComics(language);
+        if (comics) {
+            for (const comic of comics) {
+                if (comic.id == comicId) {
+                    return comic;
+                }
+            }
+        }
+    }
+
+    private fetchComics = async (
         language: string,
-        comic: Comic,
-    ): Promise<Comic> => {
-        const indexPage = await this.doku.getPage(comic.id);
+        menuEntry: string,
+        categoryName: string | undefined,
+        ratings: ComicRating[],
+    ): Promise<Comic[]> => {
+        menuEntry = this.pathToId(menuEntry);
+        const indexPage = await this.doku.getPage(menuEntry.toString());
 
-        // When comic arrives to us, its id is normally in the form:
-        //   $language:$comicId[:index]
-        // we need $language and :index to form a URL, and otherwise throw them
-        // away.
-        let comicIdMatch = (new RegExp('^(' +
-            escapeStringRegexp(language) +
-            ':)?(.*?)(:index)?$')).exec(comic.id);
-        if (comicIdMatch) {
-            comic.id = comicIdMatch[2];
+        const cnavMatch = indexPage.match(/[{]cnav(>([^}]+))?[}]/);
+        if (cnavMatch) {
+            let comicId = menuEntry.replace(/:index$/, '');
+
+            // TODO(dotdoom): #story cnavMatch[2] is the 1st strip.
+
+            if (comicId.startsWith(language + ':')) {
+                comicId = comicId.substring(language.length + 1);
+            }
+            const comic: Comic = {
+                id: comicId,
+                homePageURL: this.pageURL(menuEntry),
+                category: categoryName,
+                categoryName: categoryName,
+                ...ratings[0],
+            }
+
+            let titleMatch = indexPage.match(/=([^=]+?)=/);
+            if (titleMatch) {
+                comic.name = titleMatch[1].trim();
+            }
+
+            let imageMatch = indexPage.match(
+                /{{([^}]+[.](png|jpe?g)[^|}]+)[^}]*}}/);
+            if (imageMatch) {
+                comic.thumbnailURL = this.pageURL(
+                    ['_media', comic.id, imageMatch[1].trim()].join('/'));
+            }
+
+            return [comic];
         }
 
-        let titleMatch = indexPage.match(/=([^=]+?)=/);
-        if (titleMatch) {
-            comic.name = titleMatch[1].trim();
+        if (language == 'ru') {
+            const exploreUrl = new URL(`/${menuEntry}`, this.baseUrl);
+            exploreUrl.searchParams.append('do', 'edit');
+            console.error(`Skipped index page: ${exploreUrl}`);
         }
 
-        let imageMatch = indexPage.match(
-            /{{([^}]+[.](png|jpe?g)[^|}]+)[^}]*}}/);
-        if (imageMatch) {
-            comic.thumbnailURL = this.pageURL(
-                ['_media', comic.id, imageMatch[1].trim()].join('/'));
-        }
-
-        return comic;
+        return [];
     }
 
     private parseComicRating = (rating: string) => {
@@ -134,16 +177,6 @@ export class Comicslate {
         };
     }
 
-    getComics = async (language: string): Promise<Comic[]> => {
-        if (!(language in this.comicsCache)) {
-            const refreshCache = async () =>
-                this.comicsCache[language] = await this.fetchComics(language);
-            await refreshCache();
-            setInterval(refreshCache, (Math.random() * 5 + 7) * 60 * 1000);
-        }
-        return this.comicsCache[language];
-    }
-
     private pageURL = (id: string, html: boolean = false) => {
         const url = new URL('/' + id.replace(/:/g, '/'), this.baseUrl);
         if (html) {
@@ -152,34 +185,41 @@ export class Comicslate {
         return url;
     }
 
+    private pathToId = (path: string) => path
+        .replace(/[/]+/g, ':')  // Replace slashes with colons.
+        .replace(/^[:]+/, '');  // Remove leading slash.
+
     parsePageURL = async (url: URL): Promise<PageId | undefined> => {
-        const fullId = url.pathname
-            .replace(/^[/]/, '')
-            .replace(/[/]+/g, ':')
-            .replace(/^_media:/, '')
-            .replace(/[.]\w+$/, '');
-        // Can't do much better here, we really need a language to fetch comics.
-        const languageMatch = fullId.match(/^(..):(.*)$/);
-        if (languageMatch) {
-            const language = languageMatch[1];
-            const comicAndStripId = languageMatch[2];
-            for (const comic of await this.getComics(language)) {
-                if (comicAndStripId.indexOf(comic.id) == 0) {
+        const fullId = this.pathToId(url.pathname)
+            .replace(/^_media:/, '')  // Remove leading _media part.
+            .replace(/[.].*$/, '');  // Remove extension (for _media links).
+
+        for (const language in this.comicsCache) {
+            if (fullId.startsWith(language + ':')) {
+                const comicAndStripId = fullId.substring(language.length + 1);
+                if (comicAndStripId.indexOf(':') < 0) {
                     return new PageId(
                         language,
-                        comic.id,
-                        comicAndStripId == comic.id ?
-                            undefined :
-                            comicAndStripId.substring(comic.id.length + 1),
+                        comicAndStripId,
                     );
+                } else {
+                    const parser = comicAndStripId.match(/^(.+):([^:]+)$/);
+                    if (parser) {
+                        return new PageId(
+                            language,
+                            parser[1],
+                            parser[2],
+                        );
+                    }
                 }
             }
         }
     }
 
-    private fetchComics = async (language: string): Promise<Comic[]> => {
-        const menu = (await this.doku.getPage(`${language}: menu`)).split('\n');
-        const comics: Promise<Comic>[] = [];
+    private fetchMenu = async (language: string): Promise<Comic[]> => {
+        const menu = (await this.doku.getPage(language + Comicslate.menuPage))
+            .split('\n');
+        const comics: Promise<Comic[]>[] = [];
         let categoryName: string | undefined = undefined;
         for (const line of menu) {
             let match: RegExpMatchArray | null;
@@ -189,14 +229,15 @@ export class Comicslate {
                 // "Add new comics" line, ignore.
                 continue;
             } else if (match = line.match(/\[\[([^\]]+)\]\](.*)/)) {
-                const ratings = match[2].match(/[@*]\w+[@*]/g);
-                comics.push(this.getComic(language, {
-                    category: categoryName,
-                    ...this.createComicObject(match[1]),
-                    ...(ratings ? this.parseComicRating(ratings[0]) : {}),
-                }));
+                const ratings = match[2].match(/[@*]\w+[@*]/g) || [];
+                comics.push(this.fetchComics(
+                    language,
+                    match[1],
+                    categoryName,
+                    ratings.map((r) => this.parseComicRating(r)),
+                ));
             }
         }
-        return Promise.all(comics);
+        return (<Comic[]>[]).concat(...await Promise.all(comics));
     }
 }

@@ -110,13 +110,20 @@ export class Bot {
 
     private buildSinglePage = async (url: URL) => {
         const id = await this.comicslate.parsePageURL(url);
+        if (!id || !id.stripId) {
+            return null;
+        }
+
+        const comic = this.comicslate.getComic(id.language, id.comicId);
+        if (!comic) {
+            return null;
+        }
+
         const strip = await this.comicslate.getStrip(
-            id!.language,
-            id!.comicId,
-            id!.stripId!,
+            id.language,
+            id.comicId,
+            id.stripId,
         );
-        const comic = (await this.comicslate.getComics(id!.language))
-            .filter((c) => c.id == id!.comicId)[0];
 
         let response = new discord.RichEmbed();
         response.setTitle(
