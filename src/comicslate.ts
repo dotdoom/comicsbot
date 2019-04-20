@@ -194,7 +194,7 @@ export class Comicslate {
         };
     }
 
-    private pageURL = (id: string, html: boolean = false) => {
+    pageURL = (id: string, html: boolean = false) => {
         const url = new URL('/' + id.replace(/:/g, '/'), this.baseUrl);
         if (html) {
             url.searchParams.set('do', 'export_xhtml');
