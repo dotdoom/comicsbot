@@ -5,26 +5,40 @@ import tmp from 'tmp';
 import { Comicslate } from './comicslate';
 import { Renderer } from './render';
 
-const clientLanguage = (preferredLanguageCode: string): RequestHandler => {
+const clientLanguage = (comicslate: Comicslate): RequestHandler => {
+    const serverPreference: { [language: string]: number } = {};
+    let maxPreference = 0;
+    let preferredLanguageCode: string;
+    for (const language of comicslate.getLanguages()) {
+        serverPreference[language] = comicslate.getComics(language).length;
+        if (serverPreference[language] > maxPreference) {
+            maxPreference = serverPreference[language];
+            preferredLanguageCode = language;
+        }
+    }
+    for (const language in serverPreference) {
+        serverPreference[language] /= maxPreference;
+    }
+
     return (req, res, next) => {
         const acceptLanguageHeader = req.header('Accept-Language');
         // If unspecified, language is the one server prefers.
         res.locals.language = preferredLanguageCode;
         if (acceptLanguageHeader) {
-            const languages = acceptLanguage.parse(
-                acceptLanguageHeader);
-            if (languages.length > 0) {
-                // If requestor doesn't know server preferred language
-                // at 0.5 quality, pick the one requestor knows best.
-                res.locals.language = languages[0].code;
-                for (let language of languages) {
-                    if (language.code == preferredLanguageCode &&
-                        language.quality >= 0.5) {
-                        res.locals.language = preferredLanguageCode;
-                        break;
+            const clientLanguages = acceptLanguage.parse(acceptLanguageHeader);
+            let maxQuality = 0;
+            for (const clientLanguage of clientLanguages) {
+                if (clientLanguage.code in serverPreference) {
+                    const quality = clientLanguage.quality *
+                        serverPreference[clientLanguage.code];
+                    if (quality > maxQuality) {
+                        maxQuality = quality;
+                        res.locals.language = clientLanguage.code;
                     }
                 }
             }
+            console.log(
+                `Picked language ${res.locals.language}, q=${maxQuality}`);
         }
 
         next();
@@ -64,7 +78,7 @@ export class App {
         app.use(
             bodyParser.urlencoded({ extended: true }),
             bodyParser.json(),
-            clientLanguage('ru'),
+            clientLanguage(this.comicslate),
         );
 
         app.get('/comics', jsonApi(async (req, res) =>

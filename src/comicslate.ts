@@ -73,6 +73,8 @@ export class Comicslate {
         }
     }
 
+    getLanguages = () => Object.keys(this.comicsCache);
+
     getStrips = async (
         language: string,
         comicId: string,
