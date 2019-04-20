@@ -75,6 +75,7 @@ interface ComicStrips {
 }
 
 interface Strip extends PageInfo {
+    url: URL;
     title?: string;
 }
 
@@ -132,8 +133,12 @@ export class App {
         stripId: string,
     ): Promise<Strip> => {
         const pageId = [language, comicId, stripId].join(':');
+        const strip: Strip = {
+            url: this.pageURL(pageId),
+            ...await this.doku.getPageInfo(pageId),
+        }
+
         const pageText = await this.doku.getPage(pageId);
-        const strip: Strip = await this.doku.getPageInfo(pageId);
         const titleMatch = pageText.match(/[*][*]([^*]+)[*][*]/);
         if (titleMatch) {
             strip.title = titleMatch[1];
