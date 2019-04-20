@@ -146,13 +146,11 @@ export class App {
     }
 
     private renderStrip: RequestHandler = async (req, res) => {
-        const pageId = req.params.id ?
-            [res.locals.language, req.params.id].join(':') :
-            [
-                res.locals.language,
-                req.params.comicId,
-                req.params.stripId,
-            ].join(':');
+        const pageId = [
+            res.locals.language,
+            req.params.comicId,
+            req.params.stripId,
+        ].join(':');
 
         const dir = dirSync();
         try {
