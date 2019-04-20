@@ -128,36 +128,60 @@ export class Comicslate {
         menuEntry = this.pathToId(menuEntry);
         const indexPage = await this.doku.getPage(menuEntry.toString());
 
+        const comicTemplate: Comic = {
+            id: menuEntry.replace(/:index$/, ''),
+            homePageURL: this.pageURL(menuEntry),
+            category: categoryName,
+            categoryName: categoryName,
+        }
+
+        if (comicTemplate.id.startsWith(language + ':')) {
+            comicTemplate.id = comicTemplate.id.substring(language.length + 1);
+        }
+
+        let titleMatch = indexPage.match(/=([^=]+?)=/);
+        if (titleMatch) {
+            comicTemplate.name = titleMatch[1].trim();
+        }
+
+        let imageMatch = indexPage.match(
+            /{{([^}]+[.](png|jpe?g)[^|}]+)[^}]*}}/);
+        if (imageMatch) {
+            comicTemplate.thumbnailURL = this.pageURL(
+                ['_media', comicTemplate.id, imageMatch[1].trim()].join('/'));
+        }
+
         const cnavMatch = indexPage.match(/[{]cnav(>([^}]+))?[}]/);
         if (cnavMatch) {
-            let comicId = menuEntry.replace(/:index$/, '');
-
             // TODO(dotdoom): #story cnavMatch[2] is the 1st strip.
-
-            if (comicId.startsWith(language + ':')) {
-                comicId = comicId.substring(language.length + 1);
-            }
             const comic: Comic = {
-                id: comicId,
-                homePageURL: this.pageURL(menuEntry),
-                category: categoryName,
-                categoryName: categoryName,
+                ...comicTemplate,
                 ...ratings[0],
             }
-
-            let titleMatch = indexPage.match(/=([^=]+?)=/);
-            if (titleMatch) {
-                comic.name = titleMatch[1].trim();
-            }
-
-            let imageMatch = indexPage.match(
-                /{{([^}]+[.](png|jpe?g)[^|}]+)[^}]*}}/);
-            if (imageMatch) {
-                comic.thumbnailURL = this.pageURL(
-                    ['_media', comic.id, imageMatch[1].trim()].join('/'));
-            }
-
             return [comic];
+        }
+
+        const cnavMultiMatch = indexPage.match(
+            /[{][{]section>[^#]+[/]index#cnav/g);
+        if (cnavMultiMatch) {
+            const comics: Comic[] = [];
+            for (const cnav of cnavMultiMatch) {
+                const subcomicMatch = cnav.match(/>[./]*([^#]+)[/]index/);
+                if (subcomicMatch) {
+                    comics.push({
+                        ...comicTemplate,
+                        id: comicTemplate.id + ':' + subcomicMatch[1],
+                        name: comicTemplate.name + ` #${comics.length + 1}`,
+                    });
+                }
+            }
+            comics.forEach((c, index) => {
+                if (index < ratings.length) {
+                    Object.assign(c, ratings[index]);
+                }
+            });
+
+            return comics;
         }
 
         if (language == 'ru') {
