@@ -69,7 +69,6 @@ export class Comicslate {
             if (page.id.endsWith(Comicslate.menuPage)) {
                 const language = page.id.slice(0, -Comicslate.menuPage.length);
                 this.comicsCache[language] = await this.fetchMenu(language);
-                console.log(`${language}:${this.comicsCache[language].length}`);
             }
         }
     }
@@ -182,12 +181,6 @@ export class Comicslate {
             });
 
             return comics;
-        }
-
-        if (language == 'ru') {
-            const exploreUrl = new URL(`/${menuEntry}`, this.baseUrl);
-            exploreUrl.searchParams.append('do', 'edit');
-            console.error(`Skipped index page: ${exploreUrl}`);
         }
 
         return [];
