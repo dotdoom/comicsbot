@@ -1,7 +1,7 @@
 import * as discord from 'discord.js';
 import moment from 'moment';
 import { URL } from 'url';
-import { Doku } from './doku';
+import { Comicslate } from './comicslate';
 import { Renderer } from './render';
 
 enum Emoji {
@@ -10,16 +10,18 @@ enum Emoji {
     ThumbsDown = "\u{1f44e}",
     Cat = "\u{1f431}",
     Disappointed = "\u{1f61e}",
+    Star = "\u{2b50}",
+    GlowingStar = "\u{1f31f}",
 }
 
 export class Bot {
     private readonly client: discord.Client = new discord.Client();
     private readonly renderer: Renderer;
-    private readonly doku: Doku;
+    private readonly comicslate: Comicslate;
 
-    constructor(renderer: Renderer, doku: Doku) {
+    constructor(renderer: Renderer, comicslate: Comicslate) {
         this.renderer = renderer;
-        this.doku = doku;
+        this.comicslate = comicslate;
 
         setInterval(() => {
             console.log('Ping [1m]: ', this.client.pings);
@@ -107,19 +109,32 @@ export class Bot {
     }
 
     private buildSinglePage = async (url: URL) => {
-        const id = url.pathname.substring(1).replace(/[/]/g, ':');
-        const pageInfo = await this.doku.getPageInfo(id);
+        const id = await this.comicslate.parsePageURL(url);
+        const strip = await this.comicslate.getStrip(
+            id!.language,
+            id!.comicId,
+            id!.stripId!,
+        );
+        const comic = (await this.comicslate.getComics(id!.language))
+            .filter((c) => c.id == id!.comicId)[0];
 
         let response = new discord.RichEmbed();
-        response.setTitle('`' + pageInfo.name + '`');
+        response.setTitle(
+            '`' +
+            `${comic.category} | ${comic.name} ` +
+            '` ' + `${comic.isActive ? Emoji.GlowingStar : Emoji.Star}` + ' `' +
+            `${strip.title || strip.name}` +
+            '`'
+        );
         response.setURL(url.href);
-        response.setAuthor(pageInfo.author);
+        response.setAuthor(strip.author);
 
         // TODO(dotdoom): figure out locale from guild region.
         moment.locale('ru');
-        response.setDescription(moment(pageInfo.lastModified).fromNow());
+        response.setDescription(moment(strip.lastModified).fromNow());
 
-        const rendered = await this.renderer.renderSinglePage(id, '/tmp');
+        const rendered = await this.renderer.renderSinglePage(id!.toString(),
+            '/tmp');
         if (rendered.pageURL) {
             for (const box of rendered.boxes) {
                 if (box.path) {

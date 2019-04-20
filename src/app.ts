@@ -2,9 +2,7 @@ import * as acceptLanguage from 'accept-language-parser';
 import * as bodyParser from 'body-parser';
 import { Application, RequestHandler } from 'express';
 import { dirSync } from 'tmp';
-import { URL } from 'url';
 import { Comicslate } from './comicslate';
-import { PageInfo } from './doku';
 import { Renderer } from './render';
 
 const clientLanguage = (preferredLanguageCode: string): RequestHandler => {
@@ -53,40 +51,6 @@ const jsonApi = (handler: RequestHandler): RequestHandler => {
             res.status(503).json(e.toString());
         }
     };
-}
-
-interface Comic {
-    id: string;
-    homePageURL: URL;
-
-    // Data available from $language:menu.
-    category?: string;
-    ratingColor?: string,
-    isActive?: boolean,
-
-    // Data that has to be extracted.
-    name?: string;
-    thumbnailURL?: URL;
-}
-
-interface ComicStrips {
-    storyStrips: string[];
-    bonusStrips: string[];
-}
-
-interface Strip extends PageInfo {
-    url: URL;
-    title?: string;
-}
-
-interface Updates {
-    snapshot: number;
-    updates?: {
-        [comicId: string]: {
-            created?: ComicStrips;
-            updated?: ComicStrips;
-        };
-    }
 }
 
 export class App {

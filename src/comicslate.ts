@@ -26,6 +26,22 @@ interface Strip extends doku.PageInfo {
     title?: string;
 }
 
+class PageId {
+    readonly language: string;
+    readonly comicId: string;
+    readonly stripId?: string;
+
+    constructor(language: string, comicId: string, stripId?: string) {
+        this.language = language;
+        this.comicId = comicId;
+        this.stripId = stripId;
+    }
+
+    toString = () => [this.language, this.comicId, this.stripId]
+        .filter(Boolean)
+        .join(':');
+}
+
 export class Comicslate {
     private readonly doku: doku.Doku;
     private readonly baseUrl: URL;
@@ -134,6 +150,31 @@ export class Comicslate {
             url.searchParams.set('do', 'export_xhtml');
         }
         return url;
+    }
+
+    parsePageURL = async (url: URL): Promise<PageId | undefined> => {
+        const fullId = url.pathname
+            .replace(/^[/]/, '')
+            .replace(/[/]+/g, ':')
+            .replace(/^_media:/, '')
+            .replace(/[.]\w+$/, '');
+        // Can't do much better here, we really need a language to fetch comics.
+        const languageMatch = fullId.match(/^(..):(.*)$/);
+        if (languageMatch) {
+            const language = languageMatch[1];
+            const comicAndStripId = languageMatch[2];
+            for (const comic of await this.getComics(language)) {
+                if (comicAndStripId.indexOf(comic.id) == 0) {
+                    return new PageId(
+                        language,
+                        comic.id,
+                        comicAndStripId == comic.id ?
+                            undefined :
+                            comicAndStripId.substring(comic.id.length + 1),
+                    );
+                }
+            }
+        }
     }
 
     private fetchComics = async (language: string): Promise<Comic[]> => {

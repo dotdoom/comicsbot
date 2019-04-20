@@ -53,10 +53,11 @@ interface Config {
   const render = new Renderer('../config/render.js', doku, browser, baseUrl);
 
   const app = express();
-  new App(app, render, new Comicslate(doku, baseUrl));
+  const comicslate = new Comicslate(doku, baseUrl);
+  new App(app, render, comicslate);
   app.listen(config.app.port);
 
-  const bot = new Bot(render, doku);
+  const bot = new Bot(render, comicslate);
   bot.connect(config.discordToken);
   onExit(bot.destroy);
 })();
