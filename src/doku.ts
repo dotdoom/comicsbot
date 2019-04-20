@@ -33,6 +33,11 @@ export interface PageInfo {
     version: number;
 }
 
+interface MediaInfo extends PageInfo {
+    perms: string;
+    size: number;
+}
+
 interface Cookie {
     name: string;
     value: string;
@@ -46,7 +51,7 @@ function utcSecondsToDate(seconds: number) {
 }
 
 export class Doku {
-    private client: xmlrpc.Client
+    private readonly client: xmlrpc.Client
 
     constructor(client: xmlrpc.Client) {
         this.client = client;
@@ -103,6 +108,18 @@ export class Doku {
         }
         return [];
     }
+
+    getRecentChanges = (timestamp: number): Promise<PageInfo[]> =>
+        <Promise<PageInfo[]>>this.methodCall(
+            'wiki.getRecentChanges',
+            [timestamp],
+        );
+
+    getRecentMediaChanges = (timestamp: number): Promise<MediaInfo[]> =>
+        <Promise<MediaInfo[]>>this.methodCall(
+            'wiki.getRecentMediaChanges',
+            [timestamp],
+        );
 
     private methodCall = (method: string, params: any[]) =>
         new Promise((resolve, reject) => this.client.methodCall(
