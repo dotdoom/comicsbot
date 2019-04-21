@@ -3,10 +3,12 @@
   "doku": {
     "user": "dokubot",
     "password": "supers3cr3t",
-    "baseUrl": "https://comicslate.org/",
-    "serverRoot": "/var/www/comicslate.org"
+    "baseUrl": "https://comicslate.org/"
   },
   "app": {
     "port": 8081
+  },
+  "render": {
+    "baseDirectory": "/var/www/comicslate.org/data/media"
   }
 }

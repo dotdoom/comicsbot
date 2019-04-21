@@ -18,10 +18,12 @@ interface Config {
     user: string,
     password: string,
     baseUrl: string,
-    serverRoot: string,
   },
   app: {
     port: number
+  },
+  render: {
+    baseDirectory: string,
   },
 }
 
