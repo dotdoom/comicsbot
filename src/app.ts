@@ -1,7 +1,6 @@
 import * as acceptLanguage from 'accept-language-parser';
 import * as bodyParser from 'body-parser';
 import { Application, RequestHandler } from 'express';
-import tmp from 'tmp';
 import { Comicslate } from './comicslate';
 import { Renderer } from './render';
 
@@ -155,12 +154,6 @@ export class App {
             req.params.comicId,
             req.params.stripId,
         ].join(':'), true);
-        const dir = tmp.dirSync();
-        try {
-            res.sendFile(
-                (await this.render.renderSinglePage(pageUrl, dir.name)).path);
-        } finally {
-            dir.removeCallback();
-        }
+        res.sendFile((await this.render.renderSinglePage(pageUrl)).path);
     }
 }
