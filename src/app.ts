@@ -1,6 +1,7 @@
 import * as acceptLanguage from 'accept-language-parser';
 import * as bodyParser from 'body-parser';
 import { Application, RequestHandler } from 'express';
+import fs from 'fs';
 import { Comicslate } from './comicslate';
 import { Renderer } from './render';
 
@@ -154,6 +155,20 @@ export class App {
             req.params.comicId,
             req.params.stripId,
         ].join(':'), true);
-        res.sendFile((await this.render.renderSinglePage(pageUrl)).path);
+
+        const fileName = this.render.renderFilename(pageUrl);
+        if (fs.existsSync(fileName)) {
+            res.sendFile(fileName);
+        } else {
+            res.sendFile((await this.render.renderSinglePage(pageUrl)).path);
+        }
+
+        /*console.log(`time on server: ${await doku.getTime()}`);
+        let stats = fs.statSync("/tmp/page");
+        console.log(`file: ${stats.mtime} (${stats.mtime.getTime()})`);
+        const date = (await doku.getPageInfo('ru:user:dot')).lastModified;
+        console.log(`page: ${date}`);
+        //console.log(`page == file: ${stats.mtime.getTime() === date.getTime()}`);
+        fs.utimesSync('/tmp/page', date, date);*/
     }
 }
