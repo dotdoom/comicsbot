@@ -52,7 +52,8 @@ interface Config {
   }));
   await doku.login(config.doku.user, config.doku.password);
 
-  const render = new Renderer('../config/render.js', browser);
+  const render = new Renderer('../config/render.js', browser,
+    config.render.baseDirectory);
 
   const comicslate = new Comicslate(doku, baseUrl);
 
