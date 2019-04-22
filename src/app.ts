@@ -1,10 +1,8 @@
 import * as acceptLanguage from 'accept-language-parser';
 import * as bodyParser from 'body-parser';
 import { Application, RequestHandler } from 'express';
-import fs from 'fs';
 import morgan from 'morgan';
 import { Comicslate } from './comicslate';
-import { Renderer } from './render';
 
 const clientLanguage = (comicslate: Comicslate): RequestHandler => {
     const serverPreference: { [language: string]: number } = {};
@@ -69,11 +67,9 @@ const jsonApi = (handler: RequestHandler): RequestHandler => {
 }
 
 export class App {
-    private readonly render: Renderer;
     private readonly comicslate: Comicslate;
 
-    constructor(app: Application, render: Renderer, comicslate: Comicslate) {
-        this.render = render;
+    constructor(app: Application, comicslate: Comicslate) {
         this.comicslate = comicslate;
 
         app.use(
@@ -152,29 +148,24 @@ export class App {
     }*/
 
     private renderStrip: RequestHandler = async (req, res) => {
-        const pageUrl = await this.comicslate.pageURL([
+        const stripFilename = await this.comicslate.renderStrip(
             res.locals.language,
             req.params.comicId,
             req.params.stripId,
-        ].join(':'), true);
+            !req.query.refresh,
+        );
 
-        const fileName = this.render.renderFilename(pageUrl);
-        const sendFileOptions = {
-            maxAge: 7 * 24 * 60 * 60 * 1000,
-        };
-        if (fs.existsSync(fileName)) {
-            res.sendFile(fileName, sendFileOptions);
-        } else {
-            res.sendFile((await this.render.renderSinglePage(pageUrl)).path,
-                sendFileOptions);
-        }
-
-        /*console.log(`time on server: ${await doku.getTime()}`);
-        let stats = fs.statSync("/tmp/page");
-        console.log(`file: ${stats.mtime} (${stats.mtime.getTime()})`);
-        const date = (await doku.getPageInfo('ru:user:dot')).lastModified;
-        console.log(`page: ${date}`);
-        //console.log(`page == file: ${stats.mtime.getTime() === date.getTime()}`);
-        fs.utimesSync('/tmp/page', date, date);*/
+        // sendFile is smart:
+        // - it adds Content-Type automatically;
+        // - it handles ranged requests;
+        // - it adds "Cache-Control: public", "ETag" and "Last-Modified"
+        //   headers;
+        // - the presence of ETag means that the browser will send validating
+        //   requests on each fetch. We will either reply with 304 or 200.
+        //   Therefore, we can set arbitrarily large maxAge without worrying
+        //   about stale cache.
+        return res.sendFile(stripFilename, {
+            maxAge: 365 * 24 * 60 * 60 * 1000,
+        });
     }
 }

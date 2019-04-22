@@ -55,14 +55,14 @@ interface Config {
   const render = new Renderer('../config/render.js', browser,
     config.render.baseDirectory);
 
-  const comicslate = new Comicslate(doku, baseUrl);
+  const comicslate = new Comicslate(doku, render, baseUrl);
 
   console.log('Initializing Wiki...');
   await comicslate.initialized;
 
   console.log('Starting API server...');
   const app = express();
-  new App(app, render, comicslate);
+  new App(app, comicslate);
   app.listen(config.app.port);
 
   if (config.discordToken) {

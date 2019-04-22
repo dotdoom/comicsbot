@@ -1,5 +1,7 @@
+import fs from 'fs';
 import { URL } from 'url';
 import * as doku from './doku';
+import { Renderer } from './render';
 
 interface ComicRating {
     // Data available from $language:menu.
@@ -24,7 +26,10 @@ interface ComicStrips {
 }
 
 interface Strip extends doku.PageInfo {
+    // TODO(dotdoom): remove this deprecated field.
     url: URL;
+    displayUrl: URL;
+    shareUrl: URL;
     title?: string;
 }
 
@@ -48,6 +53,7 @@ export class Comicslate {
     readonly initialized: Promise<void>;
 
     private readonly doku: doku.Doku;
+    private readonly render: Renderer;
     private readonly baseUrl: URL;
     private readonly comicsCache: {
         [language: string]: Comic[];
@@ -55,9 +61,10 @@ export class Comicslate {
 
     private static readonly menuPage = ':menu';
 
-    constructor(doku: doku.Doku, baseUrl: URL) {
+    constructor(doku: doku.Doku, render: Renderer, baseUrl: URL) {
         this.doku = doku;
         this.baseUrl = baseUrl;
+        this.render = render;
 
         this.initialized = this.scanAllComics();
         setInterval(this.scanAllComics, 10 * 60 * 1000);
@@ -94,6 +101,8 @@ export class Comicslate {
         const pageId = [language, comicId, stripId].join(':');
         const strip: Strip = {
             url: this.pageURL(pageId, true),
+            displayUrl: this.pageURL(pageId, true),
+            shareUrl: this.pageURL(pageId),
             ...await this.doku.getPageInfo(pageId),
         }
 
@@ -104,6 +113,34 @@ export class Comicslate {
         }
 
         return strip;
+    }
+
+    renderStrip = async (
+        language: string,
+        comicId: string,
+        stripId: string,
+        allowCache: boolean = true,
+    ): Promise<string> => {
+        const pageId = [language, comicId, stripId].join(':');
+        const pageUrl = this.pageURL(pageId, true);
+
+        if (allowCache) {
+            const renderedFilename = this.render.renderFilename(pageUrl);
+            try {
+                const renderedFileStat = fs.statSync(renderedFilename);
+                const pageInfo = await this.doku.getPageInfo(pageId);
+                if (renderedFileStat.mtime.getTime() >=
+                    pageInfo.lastModified.getTime()) {
+                    return renderedFilename;
+                }
+            } catch (e) {
+                // Might be that either the rendered file or the page itself
+                // does not exist.
+            }
+        }
+        return (await this.render.renderSinglePage(pageUrl)).path;
+        // fs.utimesSync(renderedFilename, pageInfo.lastModified,
+        //               pageInfo.lastModified);
     }
 
     getComics = (language: string) => this.comicsCache[language];
