@@ -146,7 +146,7 @@ export class Bot {
         const dir = tmp.dirSync();
         try {
             response.attachFile(
-                (await this.renderer.renderSinglePage(url, dir.name)).path);
+                await this.renderer.renderSinglePage(url, dir.name));
         } finally {
             dir.removeCallback();
         }

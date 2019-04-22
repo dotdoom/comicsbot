@@ -1,15 +1,11 @@
 import * as mkdirp from 'mkdirp';
 import path from 'path';
 import puppeteer from 'puppeteer';
+import sharp from 'sharp';
 import { URL } from 'url';
 
 interface RenderOptions {
     findRect(id: string): DOMRect;
-}
-
-interface RenderedPage {
-    clip: puppeteer.BoundingBox;
-    path: string;
 }
 
 export class Renderer {
@@ -30,23 +26,23 @@ export class Renderer {
     renderSinglePage = async (
         url: URL,
         baseDirectory: string = this.baseDirectory,
-    ): Promise<RenderedPage> => {
+    ): Promise<string> => {
         const render = this.loadRenderOptions();
         const browserPage = await this.browser.newPage();
         try {
             // TODO(dotdoom): when we have 18+ control in Discord.
             //await browserPage.setCookie(...this.doku.getCookies());
             await browserPage.goto(url.href);
-
-            const renderedPage: RenderedPage = {
+            const renderFilename = this.renderFilename(url, baseDirectory);
+            console.info(`rendering page ${url} into ${renderFilename}`);
+            const pngBuffer = await browserPage.screenshot({
                 clip: <DOMRect>(await browserPage.evaluate(render.findRect)),
-                path: this.renderFilename(url, baseDirectory),
-            };
-            console.info(`rendering page ${url} into ${renderedPage.path}`);
-
-            mkdirp.sync(path.dirname(renderedPage.path));
-            await browserPage.screenshot(renderedPage);
-            return renderedPage;
+            });
+            mkdirp.sync(path.dirname(renderFilename));
+            await sharp(pngBuffer)
+                .webp({ nearLossless: true })
+                .toFile(renderFilename);
+            return renderFilename;
         } finally {
             await browserPage.close();
         }
@@ -59,7 +55,7 @@ export class Renderer {
         path.join(
             path.dirname(path.join(baseDirectory, url.pathname)),
             'u',
-            path.basename(url.pathname) + '.png',
+            path.basename(url.pathname) + '.webp',
         );
 
     private loadRenderOptions = () => {

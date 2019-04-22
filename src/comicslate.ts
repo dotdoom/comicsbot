@@ -138,7 +138,7 @@ export class Comicslate {
                 // does not exist.
             }
         }
-        return (await this.render.renderSinglePage(pageUrl)).path;
+        return await this.render.renderSinglePage(pageUrl);
         // fs.utimesSync(renderedFilename, pageInfo.lastModified,
         //               pageInfo.lastModified);
     }
