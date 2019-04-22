@@ -156,16 +156,13 @@ export class App {
         );
 
         // sendFile is smart:
-        // - it adds Content-Type automatically;
-        // - it handles ranged requests;
-        // - it adds "Cache-Control: public", "ETag" and "Last-Modified"
-        //   headers;
-        // - the presence of ETag means that the browser will send validating
-        //   requests on each fetch. We will either reply with 304 or 200.
-        //   Therefore, we can set arbitrarily large maxAge without worrying
-        //   about stale cache.
+        // - it adds Content-Type automatically
+        // - it handles ranged requests
+        // - it adds "Cache-Control: public", "ETag" and "Last-Modified" headers
         return res.sendFile(stripFilename, {
-            maxAge: 365 * 24 * 60 * 60 * 1000,
+            // Do not come back for some time; then, come with ETag for cache
+            // validation. sendFile will serve 304 if ETag matches.
+            maxAge: 60,
         });
     }
 }
