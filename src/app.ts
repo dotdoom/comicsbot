@@ -52,7 +52,7 @@ const jsonApi = (handler: RequestHandler): RequestHandler => {
                 reply = await reply;
             }
             if (reply !== undefined) {
-                res.setHeader('Cache-Control', 'public; max-age=60')
+                res.setHeader('Cache-Control', 'public, max-age=61')
                 res.json(reply);
             }
         } catch (e) {
@@ -163,7 +163,7 @@ export class App {
         return res.sendFile(stripFilename, {
             // Do not come back for some time; then, come with ETag for cache
             // validation. sendFile will serve 304 if ETag matches.
-            maxAge: 60,
+            maxAge: '1 minute',
         });
     }
 }
