@@ -2,6 +2,7 @@ import * as acceptLanguage from 'accept-language-parser';
 import * as bodyParser from 'body-parser';
 import { Application, RequestHandler } from 'express';
 import fs from 'fs';
+import morgan from 'morgan';
 import { Comicslate } from './comicslate';
 import { Renderer } from './render';
 
@@ -37,8 +38,8 @@ const clientLanguage = (comicslate: Comicslate): RequestHandler => {
                     }
                 }
             }
-            console.log(
-                `Picked language ${res.locals.language}, q=${maxQuality}`);
+            console.info(`For ${acceptLanguageHeader} picked ` +
+                `${res.locals.language};q=${maxQuality}`);
         }
 
         next();
@@ -76,6 +77,7 @@ export class App {
         this.comicslate = comicslate;
 
         app.use(
+            morgan('dev'),
             bodyParser.urlencoded({ extended: true }),
             bodyParser.json(),
             clientLanguage(this.comicslate),
@@ -157,10 +159,14 @@ export class App {
         ].join(':'), true);
 
         const fileName = this.render.renderFilename(pageUrl);
+        const sendFileOptions = {
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+        };
         if (fs.existsSync(fileName)) {
-            res.sendFile(fileName);
+            res.sendFile(fileName, sendFileOptions);
         } else {
-            res.sendFile((await this.render.renderSinglePage(pageUrl)).path);
+            res.sendFile((await this.render.renderSinglePage(pageUrl)).path,
+                sendFileOptions);
         }
 
         /*console.log(`time on server: ${await doku.getTime()}`);
