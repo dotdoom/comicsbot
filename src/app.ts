@@ -52,6 +52,7 @@ const jsonApi = (handler: RequestHandler): RequestHandler => {
                 reply = await reply;
             }
             if (reply !== undefined) {
+                res.setHeader('Cache-Control', 'public; max-age=60')
                 res.json(reply);
             }
         } catch (e) {
