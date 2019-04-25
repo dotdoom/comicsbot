@@ -91,12 +91,18 @@ export class App {
                 res.locals.language,
                 req.params.comicId,
             )));
-        app.get('/comics/:comicId/strips/:stripId', jsonApi((req, res) =>
-            this.comicslate.getStrip(
-                res.locals.language,
-                req.params.comicId,
-                req.params.stripId,
-            )));
+        app.get('/comics/:comicId/strips/:stripId', jsonApi((req, res) => {
+            const ua = req.header('User-Agent');
+            if (ua && ua.startsWith('org.dasfoo.comicslate')) {
+                this.getStrip(req, res, () => { });
+            } else {
+                return this.comicslate.getStrip(
+                    res.locals.language,
+                    req.params.comicId,
+                    req.params.stripId,
+                );
+            }
+        }));
         app.get('/comics/:comicId/strips/:stripId/render',
             jsonApi(this.renderStrip));
 
@@ -151,11 +157,40 @@ export class App {
         return updates;
     }*/
 
-    private renderStrip: RequestHandler = async (req, res) => {
-        const stripFilename = await this.comicslate.renderStrip(
+    private getStrip: RequestHandler = async (req, res) => {
+        const strip = await this.comicslate.getStrip(
             res.locals.language,
             req.params.comicId,
             req.params.stripId,
+        );
+        res.setHeader('X-Comicslate-Strip',
+            Buffer.from(JSON.stringify(strip)).toString('base64'));
+
+        const stripFilename = await this.comicslate.renderStrip(
+            strip,
+            !req.query.refresh,
+        );
+
+        // sendFile is smart:
+        // - it adds Content-Type automatically
+        // - it handles ranged requests
+        // - it adds "Cache-Control: public", "ETag" and "Last-Modified" headers
+        return res.sendFile(stripFilename, {
+            // Do not come back for some time; then, come with ETag for cache
+            // validation. sendFile will serve 304 if ETag matches.
+            maxAge: '30 minutes',
+        });
+    }
+
+    private renderStrip: RequestHandler = async (req, res) => {
+        const pageId = [
+            res.locals.language,
+            req.params.comicId,
+            req.params.stripId,
+        ].join(':');
+        const pageInfo = await this.comicslate.doku.getPageInfo(pageId);
+        const stripFilename = await this.comicslate.renderStrip(
+            pageInfo,
             !req.query.refresh,
         );
 

@@ -51,8 +51,7 @@ class PageId {
 
 export class Comicslate {
     readonly initialized: Promise<void>;
-
-    private readonly doku: doku.Doku;
+    readonly doku: doku.Doku;
     private readonly render: Renderer;
     private readonly baseUrl: URL;
     private readonly comicsCache: {
@@ -116,21 +115,17 @@ export class Comicslate {
     }
 
     renderStrip = async (
-        language: string,
-        comicId: string,
-        stripId: string,
+        page: doku.PageInfo,
         allowCache: boolean = true,
     ): Promise<string> => {
-        const pageId = [language, comicId, stripId].join(':');
-        const pageUrl = this.pageURL(pageId, true);
+        const pageUrl = this.pageURL(page.name, true);
 
         if (allowCache) {
             const renderedFilename = this.render.renderFilename(pageUrl);
             try {
                 const renderedFileStat = fs.statSync(renderedFilename);
-                const pageInfo = await this.doku.getPageInfo(pageId);
                 if (renderedFileStat.mtime.getTime() >=
-                    pageInfo.lastModified.getTime()) {
+                    page.lastModified.getTime()) {
                     return renderedFilename;
                 }
             } catch (e) {
