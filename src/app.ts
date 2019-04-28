@@ -217,7 +217,7 @@ export class App {
     }
 
     private embedJson: RequestHandler = async (req, res) => {
-        const pageId = (<string>req.query.id).split(':');
+        const pageId = (<string>req.query.id).split(/[:\/]/);
         const strip = await this.comicslate.getStrip(pageId[0], pageId[1],
             pageId[2]);
         const comic = (await this.comicslate.getComic(pageId[0], pageId[1]))!;
