@@ -239,7 +239,7 @@ export class Comicslate {
         .replace(/[/]+/g, ':')  // Replace slashes with colons.
         .replace(/^[:]+/, '');  // Remove leading slash.
 
-    parsePageURL = async (url: URL): Promise<PageId | undefined> => {
+    parsePageURL = (url: URL): PageId | undefined => {
         const fullId = this.pathToId(url.pathname)
             .replace(/^_media:/, '')  // Remove leading _media part.
             .replace(/[.].*$/, '');  // Remove extension (for _media links).

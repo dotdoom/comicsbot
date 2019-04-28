@@ -112,7 +112,7 @@ export class Bot {
     }
 
     private buildSinglePage = async (url: URL) => {
-        const id = await this.comicslate.parsePageURL(url);
+        const id = this.comicslate.parsePageURL(url);
         if (!id || !id.stripId) {
             return null;
         }

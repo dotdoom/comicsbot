@@ -2,6 +2,7 @@ import * as acceptLanguage from 'accept-language-parser';
 import * as bodyParser from 'body-parser';
 import { Application, RequestHandler } from 'express';
 import morgan from 'morgan';
+import { URL } from 'url';
 import { Comicslate } from './comicslate';
 
 const clientLanguage = (comicslate: Comicslate): RequestHandler => {
@@ -217,10 +218,13 @@ export class App {
     }
 
     private embedJson: RequestHandler = async (req, res) => {
-        const pageId = (<string>req.query.id).split(/[:\/]/);
-        const strip = await this.comicslate.getStrip(pageId[0], pageId[1],
-            pageId[2]);
-        const comic = (await this.comicslate.getComic(pageId[0], pageId[1]))!;
+        // TODO(dotdoom): find a better way to parse mixed IDs only.
+        const page = this.comicslate.parsePageURL(new URL(
+            'http://fake.server/' + req.query.id))!;
+        const strip = await this.comicslate.getStrip(page.language,
+            page.comicId, page.stripId!);
+        const comic = (await this.comicslate.getComic(page.language,
+            page.comicId))!;
         return {
             version: '1.0',
             title: strip.title,
