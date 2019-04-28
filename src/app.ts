@@ -234,7 +234,7 @@ export class App {
             type: 'photo',
             // TODO(dotdoom): resolve to real author name.
             author_name:
-                `${strip.author} ${moment(strip.lastModified).fromNow()}`,
+                `${strip.author}, ${moment(strip.lastModified).fromNow()}`,
             author_url: this.comicslate.pageURL(`user:${strip.author}`),
             provider_name: `${comic.categoryName} | ${comic.name}`,
             provider_url: comic.homePageURL,
