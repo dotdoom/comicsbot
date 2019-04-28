@@ -226,9 +226,9 @@ export class Comicslate {
         };
     }
 
-    pageURL = (id: string, html: boolean = false) => {
+    pageURL = (id: string, onlyPageContent: boolean = false) => {
         const url = new URL('/' + id.replace(/:/g, '/'), this.baseUrl);
-        if (html) {
+        if (onlyPageContent) {
             url.searchParams.set('do', 'export_xhtml');
         }
         return url;

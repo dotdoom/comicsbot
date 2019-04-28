@@ -146,7 +146,8 @@ export class Bot {
         const dir = tmp.dirSync();
         try {
             response.attachFile(
-                await this.renderer.renderSinglePage(url, dir.name));
+                await this.renderer.renderSinglePage(
+                    this.comicslate.pageURL(id.toString(), true), dir.name));
         } finally {
             dir.removeCallback();
         }
