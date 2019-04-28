@@ -1,6 +1,7 @@
 import * as acceptLanguage from 'accept-language-parser';
 import * as bodyParser from 'body-parser';
 import { Application, RequestHandler } from 'express';
+import moment from 'moment';
 import morgan from 'morgan';
 import { URL } from 'url';
 import { Comicslate } from './comicslate';
@@ -225,14 +226,18 @@ export class App {
             page.comicId, page.stripId!);
         const comic = (await this.comicslate.getComic(page.language,
             page.comicId))!;
+        const comicStar = comic.isActive ? '\u{1f31f}' : '\u{2b50}';
+
+        moment.locale(res.locals.language);
         return {
             version: '1.0',
             title: strip.title,
             type: 'photo',
             // TODO(dotdoom): resolve to real author name.
-            author_name: strip.author,
+            author_name:
+                `${strip.author} ${moment(strip.lastModified).fromNow()}`,
             author_url: this.comicslate.pageURL(`user:${strip.author}`),
-            provider_name: comic.name,
+            provider_name: `${comic.categoryName} | ${comic.name} ${comicStar}`,
             provider_url: comic.homePageURL,
         };
     }

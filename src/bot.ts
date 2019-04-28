@@ -184,7 +184,7 @@ export class Bot {
         if (pages.length) {
             for (const page of pages) {
                 try {
-                    message.reply(await this.buildSinglePage(page));
+                    //message.reply(await this.buildSinglePage(page));
                 } catch (e) {
                     message.react(Emoji.Disappointed);
                     console.error(e);
