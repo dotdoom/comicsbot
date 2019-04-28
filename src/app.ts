@@ -226,7 +226,6 @@ export class App {
             page.comicId, page.stripId!);
         const comic = (await this.comicslate.getComic(page.language,
             page.comicId))!;
-        const comicStar = comic.isActive ? '\u{1f31f}' : '\u{2b50}';
 
         moment.locale(res.locals.language);
         return {
@@ -237,7 +236,7 @@ export class App {
             author_name:
                 `${strip.author} ${moment(strip.lastModified).fromNow()}`,
             author_url: this.comicslate.pageURL(`user:${strip.author}`),
-            provider_name: `${comic.categoryName} | ${comic.name} ${comicStar}`,
+            provider_name: `${comic.categoryName} | ${comic.name}`,
             provider_url: comic.homePageURL,
         };
     }
