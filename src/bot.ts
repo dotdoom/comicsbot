@@ -145,6 +145,7 @@ export class Bot {
 
         const dir = tmp.dirSync();
         try {
+            // TODO(dotdoom): handle historical revision.
             response.attachFile(
                 await this.renderer.renderSinglePage(
                     this.comicslate.pageURL(id.toString(), true), dir.name));

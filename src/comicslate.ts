@@ -93,6 +93,7 @@ export class Comicslate {
     }
 
     getStrip = async (
+        // TODO(dotdoom): accept PageId class.
         language: string,
         comicId: string,
         stripId: string,

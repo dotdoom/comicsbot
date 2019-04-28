@@ -106,6 +106,9 @@ export class App {
         app.get('/comics/:comicId/strips/:stripId/render',
             jsonApi(this.renderStrip));
 
+        app.get('/embed/image', this.embedImage);
+        app.get('/embed/json', jsonApi(this.embedJson));
+
         /*app.get('/updates/:snapshot', jsonApi((req, res) => {
             return this.getUpdates(res.locals.language, req.params.snapshot);
         }));*/
@@ -203,5 +206,30 @@ export class App {
             // validation. sendFile will serve 304 if ETag matches.
             maxAge: '30 minutes',
         });
+    }
+
+    private embedImage: RequestHandler = async (req, res) => {
+        // TODO(dotdoom): handle links to comics / user page / strip / unknown.
+        // TODO(dotdoom): handle historical revision.
+        const pageInfo = await this.comicslate.doku.getPageInfo(
+            <string>req.query.id);
+        return res.sendFile(await this.comicslate.renderStrip(pageInfo));
+    }
+
+    private embedJson: RequestHandler = async (req, res) => {
+        const pageId = (<string>req.query.id).split(':');
+        const strip = await this.comicslate.getStrip(pageId[0], pageId[1],
+            pageId[2]);
+        const comic = (await this.comicslate.getComic(pageId[0], pageId[1]))!;
+        return {
+            version: '1.0',
+            title: strip.title,
+            type: 'photo',
+            // TODO(dotdoom): resolve to real author name.
+            author_name: strip.author,
+            author_url: this.comicslate.pageURL(`user:${strip.author}`),
+            provider_name: comic.name,
+            provider_url: comic.homePageURL,
+        };
     }
 }
