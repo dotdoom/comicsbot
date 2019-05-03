@@ -82,8 +82,8 @@ export class App {
             clientLanguage(this.comicslate),
         );
 
-        app.get('/', (req, res) =>
-            res.redirect('https://comicslate.featureupvote.com'));
+        app.get('/', (req, res) => res.redirect('https://play.google.com/' +
+            'store/apps/details?id=org.dasfoo.comicslate'));
 
         app.get('/comics', jsonApi(async (req, res) =>
             await this.comicslate.getComics(res.locals.language)));
