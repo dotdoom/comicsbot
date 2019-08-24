@@ -108,6 +108,14 @@ export class App {
         app.get('/comics/:comicId/strips/:stripId/render',
             jsonApi(this.renderStrip));
 
+        /* For this to work, there has to be HTML markup similar to:
+
+           <meta property="og:image" content="https://<server>/embed/image?id=<id>" />
+           <link rel="alternate" type="application/json+oembed" href="https://<server>/embed/json?id=<id>" />
+           <meta name="twitter:card" content="summary_large_image">
+
+           in <head> of each document.
+        */
         app.get('/embed/image', this.embedImage);
         app.get('/embed/json', jsonApi(this.embedJson));
 
