@@ -1,5 +1,4 @@
-import express from 'express';
-import puppeteer from 'puppeteer';
+import * as puppeteer from 'puppeteer';
 import { URL } from 'url';
 import * as xmlrpc from 'xmlrpc';
 import { App } from './app';
@@ -13,22 +12,22 @@ import { Renderer } from './render';
 process.title = 'comicsbot';
 
 interface Config {
-  discordToken: string
+  discordToken: string;
   doku: {
-    user: string,
-    password: string,
-    baseUrl: string,
-  },
+    user: string;
+    password: string;
+    baseUrl: string;
+  };
   app: {
-    port: number
-  },
+    port: number;
+  };
   render: {
-    baseDirectory: string,
-  },
+    baseDirectory: string;
+  };
 }
 
 (async () => {
-  let config: Config = require('../config/config.json');
+  const config: Config = require('../../config/config.json');
 
   const browser = await puppeteer.launch({
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
@@ -38,22 +37,28 @@ interface Config {
   });
   onExit(browser.close);
 
-  let baseUrl = new URL(config.doku.baseUrl);
-  let xmlrpcConstructor = baseUrl.protocol == 'http:'
-    ? xmlrpc.createClient
-    : xmlrpc.createSecureClient;
-  let xmlrpcURL = new URL('lib/exe/xmlrpc.php', baseUrl);
-  const doku = new Doku(xmlrpcConstructor({
-    url: xmlrpcURL.href,
-    cookies: true,
-    // headers: {
-    //   'User-Agent': await browser.userAgent(),
-    // },
-  }));
+  const baseUrl = new URL(config.doku.baseUrl);
+  const xmlrpcConstructor =
+    baseUrl.protocol === 'http:'
+      ? xmlrpc.createClient
+      : xmlrpc.createSecureClient;
+  const xmlrpcURL = new URL('lib/exe/xmlrpc.php', baseUrl);
+  const doku = new Doku(
+    xmlrpcConstructor({
+      url: xmlrpcURL.href,
+      cookies: true,
+      // headers: {
+      //   'User-Agent': await browser.userAgent(),
+      // },
+    })
+  );
   await doku.login(config.doku.user, config.doku.password);
 
-  const render = new Renderer('../config/render.js', browser,
-    config.render.baseDirectory);
+  const render = new Renderer(
+    '../../config/render.js',
+    browser,
+    config.render.baseDirectory
+  );
 
   const comicslate = new Comicslate(doku, render, baseUrl);
 
@@ -61,9 +66,8 @@ interface Config {
   await comicslate.initialized;
 
   console.log('Starting API server...');
-  const app = express();
-  new App(app, comicslate);
-  app.listen(config.app.port);
+  const app = new App(comicslate);
+  app.express.listen(config.app.port);
 
   if (config.discordToken) {
     console.log('Starting Discord bot...');

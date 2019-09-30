@@ -1,5 +1,7 @@
 # comicsbot
 
+[![Code Style: Google](https://img.shields.io/badge/code%20style-google-blueviolet.svg)](https://github.com/google/gts)
+
 ## Description
 
 Bot for DokuWiki, mainly website http://comicslate.org.
@@ -34,10 +36,4 @@ https://discordapp.com/api/oauth2/authorize?client_id=541646051270983683&permiss
 
 ## TODO
 
-* add tslint
-
 * add tests
-
-* figure out directory structure (dist, lib, src)
-
-* figure out tsconfig.json, package.json etc parameters
