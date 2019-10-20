@@ -30,13 +30,10 @@ export class Renderer {
     const render = this.loadRenderOptions();
     const browserPage = await this.browser.newPage();
     try {
-      /*
-      To increase image quality at expense of image file size:
-
+      // Increase deviceScaleFactor to mimic "retina" image quality.
       const viewport = await browserPage.viewport();
       viewport.deviceScaleFactor = Math.max(viewport.deviceScaleFactor || 1, 2);
       await browserPage.setViewport(viewport);
-      */
 
       // TODO(dotdoom): when we have 18+ control in Discord.
       //await browserPage.setCookie(...this.doku.getCookies());
@@ -48,7 +45,7 @@ export class Renderer {
       });
       mkdirp.sync(path.dirname(renderFilename));
       await sharp(pngBuffer)
-        .webp({ nearLossless: true })
+        .webp()
         .toFile(renderFilename);
       return renderFilename;
     } finally {
