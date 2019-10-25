@@ -269,15 +269,15 @@ export class Comicslate {
       let match: RegExpMatchArray | null;
       if (
         // tslint:disable-next-line:no-conditional-assignment
-        (match = line.match(/<spoiler[|](.*)>/))
+        (match = line.match(/=+([^=]+)=+/))
       ) {
-        categoryName = match[1];
+        categoryName = match[1].trim();
       } else if (line.indexOf('add?do=edit') >= 0) {
         // "Add new comics" line, ignore.
         continue;
       } else if (
         // tslint:disable-next-line:no-conditional-assignment
-        (match = line.match(/\[\[([^\]]+)\]\](.*)/))
+        (match = line.match(/\*.*\[\[([^\]]+)\]\](.*)/))
       ) {
         const ratings = match[2].match(/[@*]\w+[@*]/g) || [];
         comics.push(
