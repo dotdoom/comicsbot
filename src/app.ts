@@ -61,14 +61,15 @@ const jsonApi = (handler: RequestHandler): RequestHandler => {
         res.json(reply);
       }
     } catch (e) {
-      console.error(`
-Error while processing <${req.url}>
-Query:  <${req.query}>
-Params: <${req.params}>
-Locals: <${res.locals}>
-Error:  <${e}>
-Stacktrace follows on the next line:
-${e.stack}`);
+      // Use a bunch of console.error() to convert object to primitives and
+      // avoid "Uncaught TypeError: Cannot convert object to primitive value".
+      console.error('Error while processing <', req.url, '>');
+      console.error('Query:  <', req.query, '>');
+      console.error('Params: <', req.params, '>');
+      console.error('Locals: <', res.locals, '>');
+      console.error('Error:  <', e, '>');
+      console.error('Stacktrace follows on the next line:');
+      console.error(e.stack);
       res.status(503).json(e.toString());
     }
   };
