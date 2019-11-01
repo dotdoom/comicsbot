@@ -116,8 +116,9 @@ export class App {
         const ua = req.header('User-Agent');
         if (ua && ua.startsWith('org.dasfoo.comicslate')) {
           this.getStrip(req, res, () => {});
+          return undefined;
         } else {
-          await this.comicslate.getStrip(
+          return this.comicslate.getStrip(
             res.locals.language,
             req.params.comicId,
             req.params.stripId
