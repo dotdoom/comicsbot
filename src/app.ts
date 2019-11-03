@@ -57,22 +57,30 @@ const jsonApi = (handler: RequestHandler): RequestHandler => {
         reply = await reply;
       }
       if (reply !== undefined) {
-        res.setHeader('Cache-Control', `public, max-age=${30 * 60}`);
+        if (res.headersSent) {
+          console.error('Trying to send JSON reply after headers are sent!');
+        } else {
+          res.setHeader('Cache-Control', `public, max-age=${30 * 60}`);
+        }
         res.json(reply);
       }
     } catch (e) {
-      // Use a bunch of console.error() to convert object to primitives and
-      // avoid "Uncaught TypeError: Cannot convert object to primitive value".
-      console.error('Error while processing <', req.url, '>');
-      console.error('Query:  <', req.query, '>');
-      console.error('Params: <', req.params, '>');
-      console.error('Locals: <', res.locals, '>');
-      console.error('Error:  <', e, '>');
-      console.error('Stacktrace follows on the next line:');
-      console.error(e.stack);
-      res.status(503).json(e.toString());
+      next(e);
     }
   };
+};
+
+const errorHandler: express.ErrorRequestHandler = (err, req, res, next) => {
+  // Use a bunch of console.error() to convert object to primitives and
+  // avoid "Uncaught TypeError: Cannot convert object to primitive value".
+  console.error('Error while processing <', req.url, '>');
+  console.error('Query:  <', req.query, '>');
+  console.error('Params: <', req.params, '>');
+  console.error('Locals: <', res.locals, '>');
+  console.error('Error:  <', err, '>');
+  console.error('Stacktrace follows on the next line:');
+  console.error(err.stack);
+  res.status(503).json(err.toString());
 };
 
 export class App {
@@ -81,57 +89,49 @@ export class App {
 
   constructor(comicslate: Comicslate) {
     this.comicslate = comicslate;
-    this.express = express();
-
-    this.express.use(
-      morgan('dev'),
-      bodyParser.urlencoded({ extended: true }),
-      bodyParser.json(),
-      clientLanguage(this.comicslate)
-    );
-
-    this.express.get('/', (req, res) =>
-      res.redirect(
-        'https://play.google.com/' +
-          'store/apps/details?id=org.dasfoo.comicslate'
+    this.express = express()
+      .use(
+        morgan('dev'),
+        bodyParser.urlencoded({ extended: true }),
+        bodyParser.json(),
+        clientLanguage(this.comicslate)
       )
-    );
-
-    this.express.get(
-      '/comics',
-      jsonApi(async (req, res) =>
-        this.comicslate.getComics(res.locals.language)
+      .get('/', (req, res) =>
+        res.redirect(
+          'https://play.google.com/' +
+            'store/apps/details?id=org.dasfoo.comicslate'
+        )
       )
-    );
-
-    this.express.get(
-      '/comics/:comicId/strips',
-      jsonApi((req, res) =>
-        this.comicslate.getStrips(res.locals.language, req.params.comicId)
+      .get(
+        '/comics',
+        jsonApi(async (req, res) =>
+          this.comicslate.getComics(res.locals.language)
+        )
       )
-    );
-    this.express.get(
-      '/comics/:comicId/strips/:stripId',
-      jsonApi(async (req, res) => {
-        const ua = req.header('User-Agent');
-        if (ua && ua.startsWith('org.dasfoo.comicslate')) {
-          this.getStrip(req, res, () => {});
-          return undefined;
-        } else {
-          return this.comicslate.getStrip(
-            res.locals.language,
-            req.params.comicId,
-            req.params.stripId
-          );
-        }
-      })
-    );
-    this.express.get(
-      '/comics/:comicId/strips/:stripId/render',
-      jsonApi(this.renderStrip)
-    );
-
-    /* For this to work, there has to be HTML markup similar to:
+      .get(
+        '/comics/:comicId/strips',
+        jsonApi((req, res) =>
+          this.comicslate.getStrips(res.locals.language, req.params.comicId)
+        )
+      )
+      .get(
+        '/comics/:comicId/strips/:stripId',
+        jsonApi(async (req, res, next) => {
+          const ua = req.header('User-Agent');
+          if (ua && ua.startsWith('org.dasfoo.comicslate')) {
+            await this.getStrip(req, res, next);
+            return undefined;
+          } else {
+            return this.comicslate.getStrip(
+              res.locals.language,
+              req.params.comicId,
+              req.params.stripId
+            );
+          }
+        })
+      )
+      .get('/comics/:comicId/strips/:stripId/render', jsonApi(this.renderStrip))
+      /* For this to work, there has to be HTML markup similar to:
 
            <meta property="og:image" content="https://<server>/embed/image?id=<id>" />
            <link rel="alternate" type="application/json+oembed" href="https://<server>/embed/json?id=<id>" />
@@ -139,12 +139,15 @@ export class App {
 
            in <head> of each document.
         */
-    this.express.get('/embed/image', this.embedImage);
-    this.express.get('/embed/json', jsonApi(this.embedJson));
+      .get('/embed/image', jsonApi(this.embedImage))
+      .get('/embed/json', jsonApi(this.embedJson))
 
-    /*this.express.get('/updates/:snapshot', jsonApi((req, res) => {
+      /*.get('/updates/:snapshot', jsonApi((req, res) => {
             return this.getUpdates(res.locals.language, req.params.snapshot);
         }));*/
+
+      // This express.use() call must always go last.
+      .use(errorHandler);
   }
 
   /*private getUpdates = async (
@@ -193,7 +196,7 @@ export class App {
         return updates;
     }*/
 
-  private getStrip: RequestHandler = async (req, res) => {
+  private getStrip: RequestHandler = async (req, res, next) => {
     const strip = await this.comicslate.getStrip(
       res.locals.language,
       req.params.comicId,
@@ -213,14 +216,18 @@ export class App {
     // - it adds Content-Type automatically
     // - it handles ranged requests
     // - it adds "Cache-Control: public", "ETag" and "Last-Modified" headers
-    return res.sendFile(stripFilename, {
-      // Do not come back for some time; then, come with ETag for cache
-      // validation. sendFile will serve 304 if ETag matches.
-      maxAge: '30 minutes',
-    });
+    res.sendFile(
+      stripFilename,
+      {
+        // Do not come back for some time; then, come with ETag for cache
+        // validation. sendFile will serve 304 if ETag matches.
+        maxAge: '30 minutes',
+      },
+      next
+    );
   };
 
-  private renderStrip: RequestHandler = async (req, res) => {
+  private renderStrip: RequestHandler = async (req, res, next) => {
     const pageId = [
       res.locals.language,
       req.params.comicId,
@@ -236,19 +243,23 @@ export class App {
     // - it adds Content-Type automatically
     // - it handles ranged requests
     // - it adds "Cache-Control: public", "ETag" and "Last-Modified" headers
-    return res.sendFile(stripFilename, {
-      // Do not come back for some time; then, come with ETag for cache
-      // validation. sendFile will serve 304 if ETag matches.
-      maxAge: '30 minutes',
-    });
+    res.sendFile(
+      stripFilename,
+      {
+        // Do not come back for some time; then, come with ETag for cache
+        // validation. sendFile will serve 304 if ETag matches.
+        maxAge: '30 minutes',
+      },
+      next
+    );
   };
 
-  private embedImage: RequestHandler = async (req, res) => {
+  private embedImage: RequestHandler = async (req, res, next) => {
     // TODO(dotdoom): handle links to comics / user page / strip / unknown.
     // TODO(dotdoom): handle historical revision.
     const pageInfo = await this.comicslate.doku.getPageInfo(req.query
       .id as string);
-    return res.sendFile(await this.comicslate.renderStrip(pageInfo));
+    res.sendFile(await this.comicslate.renderStrip(pageInfo), next);
   };
 
   private embedJson: RequestHandler = async (req, res) => {
