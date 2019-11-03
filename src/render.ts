@@ -30,10 +30,11 @@ export class Renderer {
     const render = this.loadRenderOptions();
     const browserPage = await this.browser.newPage();
     try {
-      // Increase deviceScaleFactor to mimic "retina" image quality.
-      const viewport = await browserPage.viewport();
-      viewport.deviceScaleFactor = Math.max(viewport.deviceScaleFactor || 1, 2);
-      await browserPage.setViewport(viewport);
+      // Increase deviceScaleFactor to mimic "retina" image quality:
+      // const viewport = await browserPage.viewport();
+      // viewport.deviceScaleFactor = Math.max(
+      //   viewport.deviceScaleFactor || 1, 2);
+      // await browserPage.setViewport(viewport);
 
       // TODO(dotdoom): when we have 18+ control in Discord.
       //await browserPage.setCookie(...this.doku.getCookies());
