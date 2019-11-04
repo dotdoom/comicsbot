@@ -31,7 +31,12 @@ interface Config {
   const config: Config = require('../../config/config.json');
 
   const browser = await puppeteer.launch({
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      // https://github.com/GoogleChrome/puppeteer/issues/2410
+      '--font-render-hinting=none',
+    ],
     handleSIGINT: false,
     handleSIGTERM: false,
     handleSIGHUP: false,
