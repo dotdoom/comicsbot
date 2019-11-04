@@ -23,6 +23,7 @@ interface Config {
   };
   render: {
     baseDirectory: string;
+    deviceScaleFactor?: number;
   };
 }
 
@@ -57,7 +58,8 @@ interface Config {
   const render = new Renderer(
     '../../config/render.js',
     browser,
-    config.render.baseDirectory
+    config.render.baseDirectory,
+    config.render.deviceScaleFactor
   );
 
   const comicslate = new Comicslate(doku, render, baseUrl);

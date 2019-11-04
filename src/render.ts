@@ -12,15 +12,18 @@ export class Renderer {
   private readonly renderOptionsFile: string;
   private readonly browser: puppeteer.Browser;
   private readonly baseDirectory: string;
+  private readonly deviceScaleFactor?: number;
 
   constructor(
     renderOptionsFile: string,
     browser: puppeteer.Browser,
-    baseDirectory: string
+    baseDirectory: string,
+    deviceScaleFactor?: number
   ) {
     this.renderOptionsFile = renderOptionsFile;
     this.browser = browser;
     this.baseDirectory = baseDirectory;
+    this.deviceScaleFactor = deviceScaleFactor;
   }
 
   renderSinglePage = async (
@@ -30,11 +33,11 @@ export class Renderer {
     const render = this.loadRenderOptions();
     const browserPage = await this.browser.newPage();
     try {
-      // Increase deviceScaleFactor to mimic "retina" image quality:
-      // const viewport = await browserPage.viewport();
-      // viewport.deviceScaleFactor = Math.max(
-      //   viewport.deviceScaleFactor || 1, 2);
-      // await browserPage.setViewport(viewport);
+      if (this.deviceScaleFactor) {
+        const viewport = await browserPage.viewport();
+        viewport.deviceScaleFactor = this.deviceScaleFactor;
+        await browserPage.setViewport(viewport);
+      }
 
       // TODO(dotdoom): when we have 18+ control in Discord.
       //await browserPage.setCookie(...this.doku.getCookies());
