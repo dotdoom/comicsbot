@@ -1,5 +1,4 @@
 import * as acceptLanguage from 'accept-language-parser';
-import * as bodyParser from 'body-parser';
 import * as express from 'express';
 import { Application, RequestHandler } from 'express';
 import * as moment from 'moment';
@@ -92,8 +91,8 @@ export class App {
     this.express = express()
       .use(
         morgan('dev'),
-        bodyParser.urlencoded({ extended: true }),
-        bodyParser.json(),
+        express.urlencoded({ extended: true }),
+        express.json(),
         clientLanguage(this.comicslate)
       )
       .get('/', (req, res) =>
@@ -257,8 +256,9 @@ export class App {
   private embedImage: RequestHandler = async (req, res, next) => {
     // TODO(dotdoom): handle links to comics / user page / strip / unknown.
     // TODO(dotdoom): handle historical revision.
-    const pageInfo = await this.comicslate.doku.getPageInfo(req.query
-      .id as string);
+    const pageInfo = await this.comicslate.doku.getPageInfo(
+      req.query.id as string
+    );
     res.sendFile(await this.comicslate.renderStrip(pageInfo), next);
   };
 
