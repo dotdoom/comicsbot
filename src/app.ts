@@ -90,7 +90,7 @@ export class App {
     this.comicslate = comicslate;
     this.express = express()
       .use(
-        morgan('dev'),
+        morgan('combined'),
         express.urlencoded({ extended: true }),
         express.json(),
         clientLanguage(this.comicslate)
