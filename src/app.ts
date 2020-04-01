@@ -138,12 +138,9 @@ export class App {
 
            in <head> of each document.
         */
-      .get('/embed.wepb', jsonApi(this.embedImage))
-      .get('/embed.json', jsonApi(this.embedJson))
-
-      // Deprecated, to be removed after 2020-06-01.
-      .get('/embed/image', jsonApi(this.embedImage))
-      .get('/embed/json', jsonApi(this.embedJson))
+      // /embed/xxx are deprecated, to be removed after 2020-06-01.
+      .get(['/embed.webp', '/embed/image'], jsonApi(this.embedImage))
+      .get(['/embed.json', '/embed/json'], jsonApi(this.embedJson))
 
       /*.get('/updates/:snapshot', jsonApi((req, res) => {
             return this.getUpdates(res.locals.language, req.params.snapshot);
