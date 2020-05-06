@@ -2,8 +2,11 @@
   "extends": "./node_modules/gts/tsconfig-google.json",
   "compilerOptions": {
     "rootDir": ".",
-    "outDir": "build",
-    "lib": ["es2016", "dom"]
+    "lib": ["es2016", "dom"],
+    "outDir": "build"
   },
-  "include": ["src/**/*.ts", "test/**/*.ts"]
+  "include": [
+    "src/**/*.ts",
+    "test/**/*.ts"
+  ]
 }

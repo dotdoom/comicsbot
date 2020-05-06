@@ -1,13 +1,13 @@
 import * as acceptLanguage from 'accept-language-parser';
 import * as express from 'express';
-import { Application, RequestHandler } from 'express';
+import {Application, RequestHandler} from 'express';
 import * as moment from 'moment';
 import * as morgan from 'morgan';
-import { URL } from 'url';
-import { Comicslate } from './comicslate';
+import {URL} from 'url';
+import {Comicslate} from './comicslate';
 
 const clientLanguage = (comicslate: Comicslate): RequestHandler => {
-  const serverPreference: { [language: string]: number } = {};
+  const serverPreference: {[language: string]: number} = {};
   let maxPreference = 0;
   let preferredLanguageCode: string;
   for (const language of comicslate.getLanguages()) {
@@ -91,7 +91,7 @@ export class App {
     this.express = express()
       .use(
         morgan('combined'),
-        express.urlencoded({ extended: true }),
+        express.urlencoded({extended: true}),
         express.json(),
         clientLanguage(this.comicslate)
       )

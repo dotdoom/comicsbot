@@ -2,7 +2,7 @@ import * as mkdirp from 'mkdirp';
 import * as path from 'path';
 import * as puppeteer from 'puppeteer';
 import * as sharp from 'sharp';
-import { URL } from 'url';
+import {URL} from 'url';
 
 interface RenderOptions {
   findRect(id: string): DOMRect;
@@ -48,9 +48,7 @@ export class Renderer {
         clip: (await browserPage.evaluate(render.findRect)) as DOMRect,
       });
       mkdirp.sync(path.dirname(renderFilename));
-      await sharp(pngBuffer)
-        .webp()
-        .toFile(renderFilename);
+      await sharp(pngBuffer).webp().toFile(renderFilename);
       return renderFilename;
     } finally {
       await browserPage.close();

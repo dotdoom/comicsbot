@@ -1,9 +1,9 @@
 import * as discord from 'discord.js';
 import * as moment from 'moment';
 import * as tmp from 'tmp';
-import { URL } from 'url';
-import { Comicslate } from './comicslate';
-import { Renderer } from './render';
+import {URL} from 'url';
+import {Comicslate} from './comicslate';
+import {Renderer} from './render';
 
 enum Emoji {
   OK = '\u{1f44c}',
@@ -26,29 +26,25 @@ export class Bot {
     this.comicslate = comicslate;
     this.baseUrl = baseUrl;
 
-    setInterval(() => {
-      console.log('Ping [1m]: ', this.client.pings);
-    }, 60 * 1000);
-
     this.client
       .on('error', this.logGenericEvent('error'))
-      //.on('debug', this.logGenericEvent('debug'))
+      .on('debug', this.logGenericEvent('debug'))
       .on('warn', this.logGenericEvent('warn'))
       .on('disconnect', this.logGenericEvent('disconnect'))
-      //.on('rateLimit', this.logGenericEvent('rateLimit'))
-      .on('reconnecting', this.logGenericEvent('reconnecting'))
+      .on('rateLimit', this.logGenericEvent('rateLimit'))
+      .on('webhookUpdate', this.logGenericEvent('webhookUpdate'))
       .on('message', this.message)
       .on('ready', () => {
-        this.client.guilds.forEach(guild => {
+        this.client.guilds.cache.forEach(guild => {
           console.log(
             `Joined Discord server: ${guild.name} ` +
-              `[${guild.region}] (owned by ${guild.owner.user.tag})`
+              `[${guild.region}] (owned by ${guild!.owner?.user.tag})`
           );
-          guild.channels.forEach(channel => {
+          guild.channels.cache.forEach(channel => {
             if (channel instanceof discord.TextChannel) {
-              const permissions = channel.permissionsFor(guild.me);
+              const permissions = channel.permissionsFor(guild.me!);
               let stringPermissions = 'N/A';
-              if (permissions != null) {
+              if (permissions !== null) {
                 // Remove boring permissions and print what's left.
                 stringPermissions = permissions
                   .remove(
@@ -140,7 +136,7 @@ export class Bot {
       id.stripId
     );
 
-    const response = new discord.RichEmbed();
+    const response = new discord.MessageEmbed();
     response.setTitle(
       '`' +
         `${comic.categoryName} | ${comic.name} ` +
@@ -160,12 +156,12 @@ export class Bot {
     const dir = tmp.dirSync();
     try {
       // TODO(dotdoom): handle historical revision.
-      response.attachFile(
+      response.attachFiles([
         await this.renderer.renderSinglePage(
           this.comicslate.pageURL(id.toString(), true),
           dir.name
-        )
-      );
+        ),
+      ]);
     } finally {
       dir.removeCallback();
     }
@@ -174,7 +170,7 @@ export class Bot {
   };
 
   private message = async (message: discord.Message) => {
-    if (message.author.id === this.client.user.id) {
+    if (message.author.id === this.client.user?.id) {
       // Ignore message from self.
       return;
     }
@@ -193,7 +189,7 @@ export class Bot {
       );
     }
 
-    if (message.isMentioned(this.client.user)) {
+    if (this.client.user != null && message.mentions.has(this.client.user)) {
       message.react(Emoji.Cat);
     }
 

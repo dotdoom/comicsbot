@@ -1,12 +1,12 @@
 import * as puppeteer from 'puppeteer';
-import { URL } from 'url';
+import {URL} from 'url';
 import * as xmlrpc from 'xmlrpc';
-import { App } from './app';
-import { Bot } from './bot';
-import { Comicslate } from './comicslate';
-import { Doku } from './doku';
-import { onExit } from './on_exit';
-import { Renderer } from './render';
+import {App} from './app';
+import {Bot} from './bot';
+import {Comicslate} from './comicslate';
+import {Doku} from './doku';
+import {onExit} from './on_exit';
+import {Renderer} from './render';
 
 // Used by our .service initfile to find the bot process.
 process.title = 'comicsbot';

@@ -1,7 +1,7 @@
 import * as fs from 'fs';
-import { URL } from 'url';
+import {URL} from 'url';
 import * as doku from './doku';
-import { Renderer } from './render';
+import {Renderer} from './render';
 
 interface ComicRating {
   // Data available from $language:menu.
@@ -69,7 +69,7 @@ export class Comicslate {
   }
 
   private scanAllComics = async () => {
-    for (const page of await this.doku.getPagelist('', { depth: 2 })) {
+    for (const page of await this.doku.getPagelist('', {depth: 2})) {
       if (page.id.endsWith(Comicslate.menuPage)) {
         const language = page.id.slice(0, -Comicslate.menuPage.length);
         this.comicsCache[language] = await this.fetchMenu(language);
@@ -260,9 +260,9 @@ export class Comicslate {
   };
 
   private fetchMenu = async (language: string): Promise<Comic[]> => {
-    const menu = (await this.doku.getPage(
-      language + Comicslate.menuPage
-    )).split('\n');
+    const menu = (
+      await this.doku.getPage(language + Comicslate.menuPage)
+    ).split('\n');
     const comics: Array<Promise<Comic[]>> = [];
     let categoryName: string | undefined = undefined;
     for (const line of menu) {
