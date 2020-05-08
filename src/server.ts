@@ -30,6 +30,7 @@ interface Config {
 (async () => {
   const config: Config = require('../../config/config.json');
 
+  console.log('Starting browser...');
   const browser = await puppeteer.launch({
     args: [
       '--no-sandbox',
@@ -43,6 +44,7 @@ interface Config {
   });
   onExit(browser.close);
 
+  console.log('Logging in to Doku...');
   const baseUrl = new URL(config.doku.baseUrl);
   const xmlrpcConstructor =
     baseUrl.protocol === 'http:'
