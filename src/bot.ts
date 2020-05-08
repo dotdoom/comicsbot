@@ -189,7 +189,7 @@ export class Bot {
       );
     }
 
-    if (this.client.user != null && message.mentions.has(this.client.user)) {
+    if (this.client.user !== null && message.mentions.has(this.client.user)) {
       message.react(Emoji.Cat);
     }
 

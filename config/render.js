@@ -11,4 +11,4 @@ exports.findRect = () => {
   }
 
   throw 'Unable to find any image!';
-}
+};

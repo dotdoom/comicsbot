@@ -100,7 +100,7 @@ export class Doku {
   getCookies = (): Cookie[] => {
     const cookies = this.client.cookies;
     if (cookies !== undefined) {
-      const domain = url.parse(this.client.options.url!).host || undefined;
+      const domain = new url.URL(this.client.options.url!).host || undefined;
       return cookies
         .toString()
         .split(';')
