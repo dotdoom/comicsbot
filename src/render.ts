@@ -56,11 +56,7 @@ export class Renderer {
   };
 
   renderFilename = (url: URL, baseDirectory: string = this.baseDirectory) =>
-    path.join(
-      path.dirname(path.join(baseDirectory, url.pathname)),
-      'u',
-      path.basename(url.pathname) + '.webp'
-    );
+    path.join(baseDirectory, `${url.pathname.replace(/[.]/g, '__dot__')}.webp`);
 
   private loadRenderOptions = (): RenderOptions => {
     const resolved = require.resolve(this.renderOptionsFile);
