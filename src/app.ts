@@ -3,8 +3,8 @@ import * as express from 'express';
 import {Application, RequestHandler} from 'express';
 import * as moment from 'moment';
 import * as morgan from 'morgan';
-import {URL} from 'url';
-import {Comicslate} from './comicslate';
+import {Comicslate, PageId} from './comicslate';
+import {Renderer} from './render';
 
 const clientLanguage = (comicslate: Comicslate): RequestHandler => {
   const serverPreference: {[language: string]: number} = {};
@@ -122,9 +122,11 @@ export class App {
             return undefined;
           } else {
             return this.comicslate.getStrip(
-              res.locals.language,
-              req.params.comicId,
-              req.params.stripId
+              new PageId(
+                res.locals.language,
+                req.params.comicId,
+                req.params.stripId
+              )
             );
           }
         })
@@ -198,9 +200,7 @@ export class App {
 
   private getStrip: RequestHandler = async (req, res, next) => {
     const strip = await this.comicslate.getStrip(
-      res.locals.language,
-      req.params.comicId,
-      req.params.stripId
+      new PageId(res.locals.language, req.params.comicId, req.params.stripId)
     );
     res.setHeader(
       'X-Comicslate-Strip',
@@ -256,35 +256,36 @@ export class App {
 
   private embedImage: RequestHandler = async (req, res, next) => {
     // TODO(dotdoom): handle links to comics / user page / strip / unknown.
-    // TODO(dotdoom): handle historical revision.
     const pageInfo = await this.comicslate.doku.getPageInfo(
-      req.query.id as string
+      req.query.id as string,
+      parseInt(req.query[Renderer.versionParameterName] as string)
     );
     res.sendFile(await this.comicslate.renderStrip(pageInfo), next);
   };
 
   private embedJson: RequestHandler = async (req, res) => {
-    // TODO(dotdoom): find a better way to parse mixed IDs only.
-    const page = this.comicslate.parsePageURL(
-      new URL('http://fake.server/' + req.query.id)
-    )!;
-    const strip = await this.comicslate.getStrip(
-      page.language,
-      page.comicId,
-      page.stripId!
-    );
+    const page = this.comicslate.pageId(req.query.id as string)!;
+
+    const versionStr = req.query[Renderer.versionParameterName];
+    let version;
+    if (typeof versionStr === 'string') {
+      version = parseInt(versionStr);
+    }
+
+    const strip = await this.comicslate.getStrip(page, version);
     const comic = (await this.comicslate.getComic(
       page.language,
       page.comicId
     ))!;
 
-    moment.locale(res.locals.language);
     return {
       version: '1.0',
       title: strip.title,
       type: 'photo',
       // TODO(dotdoom): resolve to real author name.
-      author_name: `${strip.author}, ${moment(strip.lastModified).fromNow()}`,
+      author_name: `${strip.author}, ${moment(strip.lastModified)
+        .locale(res.locals.language)
+        .fromNow()}`,
       author_url: this.comicslate.pageURL(`user:${strip.author}`),
       provider_name: `${comic.categoryName} | ${comic.name}`,
       provider_url: comic.homePageURL,

@@ -9,6 +9,8 @@ interface RenderOptions {
 }
 
 export class Renderer {
+  static readonly versionParameterName = 'rev';
+
   private readonly renderOptionsFile: string;
   private readonly browser: puppeteer.Browser;
   private readonly baseDirectory: string;
@@ -70,8 +72,18 @@ export class Renderer {
     }
   };
 
-  renderFilename = (url: URL, baseDirectory: string = this.baseDirectory) =>
-    path.join(baseDirectory, `${url.pathname.replace(/[.]/g, '__dot__')}.webp`);
+  renderFilename = (url: URL, baseDirectory: string = this.baseDirectory) => {
+    let fileName = url.pathname.replace(/:/g, '/').replace(/[.]/g, '__dot__');
+    if (url.searchParams.has(Renderer.versionParameterName)) {
+      const rev = parseInt(
+        url.searchParams.get(Renderer.versionParameterName)!
+      );
+      if (isFinite(rev)) {
+        fileName += `@${rev}`;
+      }
+    }
+    return path.join(baseDirectory, `${fileName}.webp`);
+  };
 
   private loadRenderOptions = (): RenderOptions => {
     const resolved = require.resolve(this.renderOptionsFile);

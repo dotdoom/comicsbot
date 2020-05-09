@@ -80,7 +80,7 @@ interface Config {
 
   if (config.discordToken) {
     console.log('Starting Discord bot...');
-    const bot = new Bot(render, comicslate, baseUrl);
+    const bot = new Bot(render, comicslate);
     bot.connect(config.discordToken);
     onExit(bot.destroy);
   }

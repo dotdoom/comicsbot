@@ -1,7 +1,4 @@
 import * as discord from 'discord.js';
-import * as moment from 'moment';
-import * as tmp from 'tmp';
-import {URL} from 'url';
 import {Comicslate} from './comicslate';
 import {Renderer} from './render';
 
@@ -19,12 +16,10 @@ export class Bot {
   private readonly client: discord.Client = new discord.Client();
   private readonly renderer: Renderer;
   private readonly comicslate: Comicslate;
-  private readonly baseUrl: URL;
 
-  constructor(renderer: Renderer, comicslate: Comicslate, baseUrl: URL) {
+  constructor(renderer: Renderer, comicslate: Comicslate) {
     this.renderer = renderer;
     this.comicslate = comicslate;
-    this.baseUrl = baseUrl;
 
     this.client
       .on('error', this.logGenericEvent('error'))
@@ -89,86 +84,6 @@ export class Bot {
     console.log('Event ', eventName, ' with args ', args);
   };
 
-  // A very stupid way of cleaning up the message from backquotes. Putting a
-  // message in backquotes may be necessary when otherwise Discord interprets
-  // certain character sequences as smileys, e.g. in
-  // "en:furry:comic:new:0001", ":new:" turns into a Unicode emoji.
-  private plainText = (message: string) =>
-    message
-      .replace(/```[a-z]*/gi, '')
-      .replace(/`/g, '')
-      .trim();
-
-  private parseWikiPages = (message: string) => {
-    const hostname = this.baseUrl.hostname;
-    let hostnameIndex = -1;
-    const pages: URL[] = [];
-    while (
-      // tslint:disable-next-line:no-conditional-assignment
-      (hostnameIndex = message.indexOf(hostname, hostnameIndex + 1)) >= 0
-    ) {
-      pages.push(
-        new URL(
-          message
-            .substring(hostnameIndex + hostname.length)
-            .replace(/[^a-z0-9]?(\s|$).*/i, ''),
-          this.baseUrl
-        )
-      );
-    }
-    return pages;
-  };
-
-  private buildSinglePage = async (url: URL) => {
-    const id = this.comicslate.parsePageURL(url);
-    if (!id || !id.stripId) {
-      return null;
-    }
-
-    const comic = this.comicslate.getComic(id.language, id.comicId);
-    if (!comic) {
-      return null;
-    }
-
-    const strip = await this.comicslate.getStrip(
-      id.language,
-      id.comicId,
-      id.stripId
-    );
-
-    const response = new discord.MessageEmbed();
-    response.setTitle(
-      '`' +
-        `${comic.categoryName} | ${comic.name} ` +
-        '` ' +
-        `${comic.isActive ? Emoji.GlowingStar : Emoji.Star}` +
-        ' `' +
-        `${strip.title || strip.name}` +
-        '`'
-    );
-    response.setURL(url.href);
-    response.setAuthor(strip.author);
-
-    // TODO(dotdoom): figure out locale from guild region.
-    moment.locale('ru');
-    response.setDescription(moment(strip.lastModified).fromNow());
-
-    const dir = tmp.dirSync();
-    try {
-      // TODO(dotdoom): handle historical revision.
-      response.attachFiles([
-        await this.renderer.renderSinglePage(
-          this.comicslate.pageURL(id.toString(), true),
-          dir.name
-        ),
-      ]);
-    } finally {
-      dir.removeCallback();
-    }
-
-    return response;
-  };
-
   private message = async (message: discord.Message) => {
     if (message.author.id === this.client.user?.id) {
       // Ignore message from self.
@@ -188,23 +103,8 @@ export class Bot {
         `Got a message ${message.content} [CLEAN:${message.cleanContent}] from user ${message.author.username} in channel ${channel.name} server ${channel.guild.name}`
       );
     }
-
     if (this.client.user !== null && message.mentions.has(this.client.user)) {
       message.react(Emoji.Cat);
-    }
-
-    const text = this.plainText(message.cleanContent);
-
-    const pages = this.parseWikiPages(text);
-    if (pages.length) {
-      for (const page of pages) {
-        try {
-          //message.reply(await this.buildSinglePage(page));
-        } catch (e) {
-          message.react(Emoji.Disappointed);
-          console.error(e);
-        }
-      }
     }
   };
 }

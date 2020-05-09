@@ -33,7 +33,7 @@ interface Strip extends doku.PageInfo {
   title?: string;
 }
 
-class PageId {
+export class PageId {
   language: string;
   comicId: string;
   stripId?: string;
@@ -91,24 +91,21 @@ export class Comicslate {
     };
   };
 
-  getStrip = async (
-    // TODO(dotdoom): accept PageId class.
-    language: string,
-    comicId: string,
-    stripId: string
-  ): Promise<Strip> => {
-    const pageId = [language, comicId, stripId].join(':');
+  getStrip = async (pageId: PageId, version?: number): Promise<Strip> => {
     const strip: Strip = {
-      url: this.pageURL(pageId, true),
-      displayUrl: this.pageURL(pageId, true),
-      shareUrl: this.pageURL(pageId),
-      ...(await this.doku.getPageInfo(pageId)),
+      url: this.pageURL(pageId.toString(), true),
+      displayUrl: this.pageURL(pageId.toString(), true),
+      shareUrl: this.pageURL(pageId.toString(), false),
+      ...(await this.doku.getPageInfo(pageId.toString(), version)),
     };
 
-    const pageText = await this.doku.getPage(pageId);
+    const pageText = await this.doku.getPage(pageId.toString(), version);
     const titleMatch = pageText.match(/[*][*]([^*]+)[*][*]/);
     if (titleMatch) {
       strip.title = titleMatch[1];
+    }
+    if (version) {
+      strip.title += ` @ ${version}`;
     }
 
     return strip;
@@ -118,23 +115,15 @@ export class Comicslate {
     page: doku.PageInfo,
     allowCache = true
   ): Promise<string> => {
-    const pageUrl = this.pageURL(page.name, true);
+    const pageUrl = this.pageURL(page.name, true, page.version);
 
     if (allowCache) {
       const renderedFilename = this.render.renderFilename(pageUrl);
-      try {
-        const renderedFileStat = fs.statSync(renderedFilename);
-        if (renderedFileStat.mtime.getTime() >= page.lastModified.getTime()) {
-          return renderedFilename;
-        }
-      } catch (e) {
-        // Might be that either the rendered file or the page itself
-        // does not exist.
+      if (fs.existsSync(renderedFilename)) {
+        return renderedFilename;
       }
     }
     return this.render.renderSinglePage(pageUrl);
-    // fs.utimesSync(renderedFilename, pageInfo.lastModified,
-    //               pageInfo.lastModified);
   };
 
   getComics = (language: string) => this.comicsCache[language];
@@ -225,10 +214,13 @@ export class Comicslate {
     };
   };
 
-  pageURL = (id: string, onlyPageContent = false) => {
+  pageURL = (id: string, onlyPageContent = false, version?: number) => {
     const url = new URL('/' + id.replace(/:/g, '/'), this.baseUrl);
     if (onlyPageContent) {
       url.searchParams.set('do', 'export_xhtml');
+    }
+    if (version) {
+      url.searchParams.set(Renderer.versionParameterName, version.toString());
     }
     return url;
   };
@@ -238,11 +230,8 @@ export class Comicslate {
       .replace(/[/]+/g, ':') // Replace slashes with colons.
       .replace(/^[:]+/, ''); // Remove leading slash.
 
-  parsePageURL = (url: URL) => {
-    const fullId = this.pathToId(url.pathname)
-      .replace(/^_media:/, '') // Remove leading _media part.
-      .replace(/[.].*$/, ''); // Remove extension (for _media links).
-
+  pageId = (path: string) => {
+    const fullId = this.pathToId(path);
     for (const language in this.comicsCache) {
       if (fullId.startsWith(language + ':')) {
         const comicAndStripId = fullId.substring(language.length + 1);

@@ -91,11 +91,23 @@ export class Doku {
       } as Page;
     });
 
-  getPageInfo = async (pagename: string) =>
-    (await this.methodCall('wiki.getPageInfo', [pagename])) as PageInfo;
+  getPageInfo = async (pagename: string, version?: number) =>
+    (await (version
+      ? this.methodCall('wiki.getPageInfoVersion', [
+          pagename,
+          // Making sure version is an integer.
+          Math.round(version),
+        ])
+      : this.methodCall('wiki.getPageInfo', [pagename]))) as PageInfo;
 
-  getPage = (pagename: string) =>
-    this.methodCall('wiki.getPage', [pagename]) as Promise<string>;
+  getPage = (pagename: string, version?: number) =>
+    (version
+      ? this.methodCall('wiki.getPageVersion', [
+          pagename,
+          // Making sure version is an integer.
+          Math.round(version),
+        ])
+      : this.methodCall('wiki.getPage', [pagename])) as Promise<string>;
 
   getCookies = (): Cookie[] => {
     const cookies = this.client.cookies;
