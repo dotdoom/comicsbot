@@ -20,6 +20,7 @@ interface Config {
   };
   app: {
     port: number;
+    cacheDirectory: string;
   };
   render: {
     baseDirectory: string;
@@ -69,7 +70,12 @@ interface Config {
     config.render.deviceScaleFactor
   );
 
-  const comicslate = new Comicslate(doku, render, baseUrl);
+  const comicslate = new Comicslate(
+    doku,
+    render,
+    baseUrl,
+    config.app.cacheDirectory
+  );
 
   console.log('Initializing Wiki...');
   await comicslate.initialized;

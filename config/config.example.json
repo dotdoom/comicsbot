@@ -6,9 +6,10 @@
     "baseUrl": "https://comicslate.org/"
   },
   "app": {
-    "port": 8081
+    "port": 8081,
+    "cacheDirectory": "/var/www/comicslate.org/data/cache/comicsbot"
   },
   "render": {
-    "baseDirectory": "/var/www/comicslate.org/data/media"
+    "baseDirectory": "/var/www/comicslate.org/data/media/u"
   }
 }

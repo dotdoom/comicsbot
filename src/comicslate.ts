@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import * as path from 'path';
 import {URL} from 'url';
 import * as doku from './doku';
 import {Renderer} from './render';
@@ -53,28 +54,60 @@ export class Comicslate {
   readonly doku: doku.Doku;
   private readonly render: Renderer;
   private readonly baseUrl: URL;
+  private readonly cacheFileName: string;
   private readonly comicsCache: {
     [language: string]: Comic[];
   } = {};
 
   private static readonly menuPage = ':menu';
 
-  constructor(doku: doku.Doku, render: Renderer, baseUrl: URL) {
+  constructor(
+    doku: doku.Doku,
+    render: Renderer,
+    baseUrl: URL,
+    cacheDirectory: string
+  ) {
     this.doku = doku;
     this.baseUrl = baseUrl;
     this.render = render;
+    this.cacheFileName = path.join(cacheDirectory, 'comics.json');
 
     this.initialized = this.scanAllComics();
     setInterval(this.scanAllComics, 10 * 60 * 1000);
   }
 
   private scanAllComics = async () => {
+    if (!this.comicsCache.length) {
+      if (fs.existsSync(this.cacheFileName)) {
+        const cache = <{[language: string]: Comic[]}>(
+          JSON.parse(fs.readFileSync(this.cacheFileName).toString())
+        );
+        for (const language in cache) {
+          this.comicsCache[language] = cache[language];
+        }
+      }
+    }
+
     for (const page of await this.doku.getPagelist('', {depth: 2})) {
       if (page.id.endsWith(Comicslate.menuPage)) {
         const language = page.id.slice(0, -Comicslate.menuPage.length);
-        this.comicsCache[language] = await this.fetchMenu(language);
+        const comics = await this.fetchMenu(language);
+        if (
+          language in this.comicsCache &&
+          this.comicsCache[language].length / 2 > comics.length
+        ) {
+          console.error(
+            `Existing cache for language ${language} is sufficiently larger ` +
+              `than the newly fetched value, discarding new value ` +
+              `(${this.comicsCache[language].length} >> ${comics.length})`
+          );
+        } else {
+          this.comicsCache[language] = comics;
+        }
       }
     }
+
+    fs.writeFileSync(this.cacheFileName, JSON.stringify(this.comicsCache));
   };
 
   getLanguages = () => Object.keys(this.comicsCache);
