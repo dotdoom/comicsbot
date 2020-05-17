@@ -7,7 +7,7 @@
   },
   "app": {
     "port": 8081,
-    "cacheDirectory": "/var/www/comicslate.org/data/cache/comicsbot"
+    "cacheDirectory": "/var/www/comicslate.org/data/cache"
   },
   "render": {
     "baseDirectory": "/var/www/comicslate.org/data/media/u"
