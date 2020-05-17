@@ -20,6 +20,10 @@ interface Comic extends ComicRating {
   // Data that has to be extracted.
   name?: string;
   thumbnailURL?: URL;
+
+  // Whether the first story strip renders without issues. Can be null until the
+  // renderer returns. Useful in app's UI to filter out unsupported comics.
+  firstStripRenders?: boolean;
 }
 
 interface ComicStrips {
@@ -55,7 +59,7 @@ export class Comicslate {
   private readonly render: Renderer;
   private readonly baseUrl: URL;
   private readonly cacheFileName: string;
-  private readonly comicsCache: {
+  private comicsCache: {
     [language: string]: Comic[];
   } = {};
 
@@ -77,17 +81,32 @@ export class Comicslate {
   }
 
   private scanAllComics = async () => {
-    if (!this.comicsCache.length) {
-      if (fs.existsSync(this.cacheFileName)) {
-        const cache = <{[language: string]: Comic[]}>(
-          JSON.parse(fs.readFileSync(this.cacheFileName).toString())
+    if (!Object.keys(this.comicsCache).length) {
+      try {
+        this.comicsCache = JSON.parse(
+          fs.readFileSync(this.cacheFileName).toString()
         );
-        for (const language in cache) {
-          this.comicsCache[language] = cache[language];
+
+        let numberOfComics = 0;
+        for (const language in this.comicsCache) {
+          numberOfComics += this.comicsCache[language].length;
         }
+        console.info(`Loaded ${numberOfComics} comics from cache`);
+
+        // This must have been the first invocation, and we successfully read
+        // cache. Let's not block initialization on the slower process below.
+        // The scan will repeat by timer later.
+        return;
+      } catch (e) {
+        this.comicsCache = {};
+        console.error(
+          `Error loading comics cache from file ${this.cacheFileName}`,
+          e
+        );
       }
     }
 
+    console.info('Scanning all comics...');
     for (const page of await this.doku.getPagelist('', {depth: 2})) {
       if (page.id.endsWith(Comicslate.menuPage)) {
         const language = page.id.slice(0, -Comicslate.menuPage.length);
@@ -97,17 +116,53 @@ export class Comicslate {
           this.comicsCache[language].length / 2 > comics.length
         ) {
           console.error(
-            `Existing cache for language ${language} is sufficiently larger ` +
+            `Language ${language}: existing cache is sufficiently larger ` +
               `than the newly fetched value, discarding new value ` +
               `(${this.comicsCache[language].length} >> ${comics.length})`
           );
         } else {
           this.comicsCache[language] = comics;
+          console.log(`Language ${language}: loaded ${comics.length} comics`);
         }
       }
     }
 
+    await this.validateAllComics();
+    console.info('Comics validated, saving cache');
     fs.writeFileSync(this.cacheFileName, JSON.stringify(this.comicsCache));
+  };
+
+  private validateAllComics = async () => {
+    const validations: Promise<any>[] = [];
+
+    for (const language in this.comicsCache) {
+      for (const comic of this.comicsCache[language]) {
+        validations.push(
+          (async () => {
+            var firstStripId = 'unknown';
+            try {
+              firstStripId = (await this.getStrips(language, comic.id))
+                .storyStrips[0];
+              await this.renderStrip(
+                await this.doku.getPageInfo(
+                  new PageId(language, comic.id, firstStripId).toString()
+                )
+              );
+              comic.firstStripRenders = true;
+            } catch (e) {
+              console.error(
+                `Failed to render the 1st story strip of ` +
+                  `${language}:${comic.id} (${firstStripId})`,
+                e
+              );
+              comic.firstStripRenders = false;
+            }
+          })()
+        );
+      }
+    }
+
+    await Promise.all(validations);
   };
 
   getLanguages = () => Object.keys(this.comicsCache);
