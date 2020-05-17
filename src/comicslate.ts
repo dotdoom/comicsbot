@@ -127,13 +127,19 @@ export class Comicslate {
       }
     }
 
-    await this.validateAllComics();
-    console.info('Comics validated, saving cache');
-    fs.writeFileSync(this.cacheFileName, JSON.stringify(this.comicsCache));
+    const numberOfValidComics = await this.validateAllComics();
+    console.info(
+      `Comics validated (valid: ${numberOfValidComics}), saving cache`
+    );
+    fs.writeFileSync(
+      this.cacheFileName,
+      JSON.stringify(this.comicsCache, null, 2)
+    );
   };
 
   private validateAllComics = async () => {
     const validations: Promise<any>[] = [];
+    let numberOfValidComics = 0;
 
     for (const language in this.comicsCache) {
       for (const comic of this.comicsCache[language]) {
@@ -149,6 +155,7 @@ export class Comicslate {
                 )
               );
               comic.firstStripRenders = true;
+              numberOfValidComics += 1;
             } catch (e) {
               console.error(
                 `Failed to render the 1st story strip of ` +
@@ -163,6 +170,7 @@ export class Comicslate {
     }
 
     await Promise.all(validations);
+    return numberOfValidComics;
   };
 
   getLanguages = () => Object.keys(this.comicsCache);
