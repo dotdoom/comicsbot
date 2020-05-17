@@ -70,15 +70,23 @@ const jsonApi = (handler: RequestHandler): RequestHandler => {
 };
 
 const errorHandler: express.ErrorRequestHandler = (err, req, res, next) => {
-  // Use a bunch of console.error() to convert object to primitives and
-  // avoid "Uncaught TypeError: Cannot convert object to primitive value".
-  console.error('Error while processing <', req.url, '>');
-  console.error('Query:  <', req.query, '>');
-  console.error('Params: <', req.params, '>');
-  console.error('Locals: <', res.locals, '>');
-  console.error('Error:  <', err, '>');
-  console.error('Stacktrace follows on the next line:');
-  console.error(err.stack);
+  // Put values as separate arguments, instead of string interpolation, to
+  // convert them into something that can be displayed on console, and avoid
+  // "Uncaught TypeError: Cannot convert object to primitive value".
+  console.error(
+    '------\nError while processing <',
+    req.url,
+    '>\nQuery:  <',
+    req.query,
+    '>\nParams: <',
+    req.params,
+    '>\nLocals: <',
+    res.locals,
+    '>\nError:  <',
+    err,
+    '>\n------'
+  );
+
   res.status(503).json(err.toString());
 };
 

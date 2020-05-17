@@ -110,19 +110,21 @@ export class Comicslate {
     for (const page of await this.doku.getPagelist('', {depth: 2})) {
       if (page.id.endsWith(Comicslate.menuPage)) {
         const language = page.id.slice(0, -Comicslate.menuPage.length);
-        const comics = await this.fetchMenu(language);
+        console.log(`- Language ${language}...`);
+
+        const comics = await this.fetchComicsForLanguage(language);
         if (
           language in this.comicsCache &&
           this.comicsCache[language].length / 2 > comics.length
         ) {
           console.error(
-            `Language ${language}: existing cache is sufficiently larger ` +
-              `than the newly fetched value, discarding new value ` +
+            '-- Existing cache is sufficiently larger than the newly ' +
+              'fetched value, discarding new value ' +
               `(${this.comicsCache[language].length} >> ${comics.length})`
           );
         } else {
           this.comicsCache[language] = comics;
-          console.log(`Language ${language}: loaded ${comics.length} comics`);
+          console.log(`-- Loaded ${comics.length} comics`);
         }
       }
     }
@@ -145,22 +147,21 @@ export class Comicslate {
       for (const comic of this.comicsCache[language]) {
         validations.push(
           (async () => {
-            var firstStripId = 'unknown';
+            const firstStripId = new PageId(language, comic.id);
             try {
-              firstStripId = (await this.getStrips(language, comic.id))
-                .storyStrips[0];
+              const strips = await this.getStrips(language, comic.id);
+              if (!strips.storyStrips.length) {
+                throw 'Empty list of story strips';
+              }
+              firstStripId.stripId = strips.storyStrips[0];
               await this.renderStrip(
-                await this.doku.getPageInfo(
-                  new PageId(language, comic.id, firstStripId).toString()
-                )
+                await this.doku.getPageInfo(firstStripId.toString())
               );
               comic.firstStripRenders = true;
               numberOfValidComics += 1;
             } catch (e) {
               console.error(
-                `Failed to render the 1st story strip of ` +
-                  `${language}:${comic.id} (${firstStripId})`,
-                e
+                `Failed to render the 1st story strip (${firstStripId}): ${e}`
               );
               comic.firstStripRenders = false;
             }
@@ -236,7 +237,7 @@ export class Comicslate {
     return null;
   };
 
-  private fetchComics = async (
+  private fetchComicsForMenuEntry = async (
     language: string,
     menuEntry: string,
     categoryName: string | undefined,
@@ -344,7 +345,9 @@ export class Comicslate {
     return null;
   };
 
-  private fetchMenu = async (language: string): Promise<Comic[]> => {
+  private fetchComicsForLanguage = async (
+    language: string
+  ): Promise<Comic[]> => {
     const menu = (
       await this.doku.getPage(language + Comicslate.menuPage)
     ).split('\n');
@@ -366,7 +369,7 @@ export class Comicslate {
       ) {
         const ratings = match[2].match(/[@*]\w+[@*]/g) || [];
         comics.push(
-          this.fetchComics(
+          this.fetchComicsForMenuEntry(
             language,
             match[1],
             categoryName,
