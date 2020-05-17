@@ -43,7 +43,7 @@ interface Config {
     handleSIGTERM: false,
     handleSIGHUP: false,
   });
-  onExit(browser.close);
+  onExit(() => browser.close());
 
   console.log('Logging in to Doku...');
   const baseUrl = new URL(config.doku.baseUrl);

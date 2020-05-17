@@ -14,9 +14,12 @@ export function onExit(callback: () => Promise<void> | void) {
     process.on(signal, async signal => {
       // https://nodejs.org/api/process.html#process_signal_events
       process.exitCode = 128 /* TODO(dotdoom): + signal number */;
-      await callbackOnce();
-      // eslint-disable-next-line no-process-exit
-      process.exit();
+      try {
+        await callbackOnce();
+      } finally {
+        // eslint-disable-next-line no-process-exit
+        process.exit();
+      }
     });
   }
   process.on('uncaughtException', () => {
