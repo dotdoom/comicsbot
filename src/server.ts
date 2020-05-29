@@ -88,8 +88,13 @@ interface Config {
     console.log('Starting Discord bot...');
     const bot = new Bot(render, comicslate);
     bot.connect(config.discordToken);
-    onExit(bot.destroy);
+    onExit(() => bot.destroy());
   }
 
   console.log('Started!');
-})();
+})().catch(e => {
+  console.error(e);
+  // Have to exit manually because Node does not do it on unhandled rejections,
+  // as of yet.
+  process.exit(1);
+});
