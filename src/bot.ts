@@ -1,3 +1,4 @@
+import {exec} from 'child_process';
 import * as discord from 'discord.js';
 import {Comicslate} from './comicslate';
 import {Renderer} from './render';
@@ -105,6 +106,14 @@ export class Bot {
     }
     if (this.client.user !== null && message.mentions.has(this.client.user)) {
       message.react(Emoji.Cat);
+
+      exec('git rev-parse HEAD', async (error, stdout, stderr) => {
+        channel.send(`I'm alive.
+Bot: https://github.com/dotdoom/comicsbot/tree/${stdout.trim()}
+Renderer: \`${await this.renderer.version()}\`
+Doku: \`${await this.comicslate.doku.getVersion()}\`
+`);
+      });
     }
   };
 }

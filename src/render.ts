@@ -28,6 +28,8 @@ export class Renderer {
     this.deviceScaleFactor = deviceScaleFactor;
   }
 
+  version = (): Promise<string> => this.browser.version();
+
   renderSinglePage = async (
     url: URL,
     baseDirectory: string = this.baseDirectory
