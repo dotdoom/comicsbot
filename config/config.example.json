@@ -10,6 +10,7 @@
     "cacheDirectory": "/var/www/comicslate.org/data/cache"
   },
   "render": {
-    "baseDirectory": "/var/www/comicslate.org/data/media/u"
+    "baseDirectory": "/var/www/comicslate.org/data/media/u",
+    "deviceScaleFactor": 1
   }
 }

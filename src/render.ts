@@ -67,7 +67,20 @@ export class Renderer {
         clip: clip,
       });
       mkdirp.sync(path.dirname(renderFilename));
-      await sharp(pngBuffer).webp().toFile(renderFilename);
+      let image = sharp(pngBuffer);
+      if (this.deviceScaleFactor != null) {
+        // Scale the image back to the amount of pixels it takes on screen.
+        image = image.resize({
+          width: clip.width,
+          // Default setting of "true" may result in slight moire pattern.
+          fastShrinkOnLoad: false,
+        });
+      }
+      await image
+        .webp({
+          nearLossless: true,
+        })
+        .toFile(renderFilename);
       return renderFilename;
     } finally {
       await browserPage.close();
