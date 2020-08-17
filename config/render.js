@@ -5,7 +5,8 @@
 exports.findRect = () => {
   const container =
     document.querySelector('div.ct-container') ||
-    document.querySelector('div.fn-container');
+    document.querySelector('div.fn-container') ||
+    document.querySelector('img.media');
   if (container) {
     return container.getBoundingClientRect().toJSON();
   }
