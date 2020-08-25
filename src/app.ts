@@ -224,15 +224,15 @@ export class App {
     // - it adds Content-Type automatically
     // - it handles ranged requests
     // - it adds "Cache-Control: public", "ETag" and "Last-Modified" headers
-    res.sendFile(
-      stripFilename,
-      {
-        // Do not come back for some time; then, come with ETag for cache
-        // validation. sendFile will serve 304 if ETag matches.
-        maxAge: '30 minutes',
-      },
-      next
-    );
+    res.sendFile(stripFilename, this.sendFileOptions(), next);
+  };
+
+  private sendFileOptions: any = () => {
+    return {
+      // Do not come back for some time; then, come with ETag for cache
+      // validation. sendFile will serve 304 if ETag matches.
+      maxAge: '30 minutes',
+    };
   };
 
   private renderStrip: RequestHandler = async (req, res, next) => {
@@ -251,15 +251,7 @@ export class App {
     // - it adds Content-Type automatically
     // - it handles ranged requests
     // - it adds "Cache-Control: public", "ETag" and "Last-Modified" headers
-    res.sendFile(
-      stripFilename,
-      {
-        // Do not come back for some time; then, come with ETag for cache
-        // validation. sendFile will serve 304 if ETag matches.
-        maxAge: '30 minutes',
-      },
-      next
-    );
+    res.sendFile(stripFilename, this.sendFileOptions(), next);
   };
 
   private embedImage: RequestHandler = async (req, res, next) => {
@@ -268,7 +260,11 @@ export class App {
       req.query.id as string,
       parseInt(req.query[Renderer.versionParameterName] as string)
     );
-    res.sendFile(await this.comicslate.renderStrip(pageInfo), next);
+    res.sendFile(
+      await this.comicslate.renderStrip(pageInfo),
+      this.sendFileOptions(),
+      next
+    );
   };
 
   private embedJson: RequestHandler = async (req, res) => {
