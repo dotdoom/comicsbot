@@ -220,19 +220,34 @@ export class App {
       !req.query.refresh
     );
 
+    this.sendFile(res, stripFilename, next);
+  };
+
+  private sendFile = (
+    res: express.Response<any>,
+    path: string,
+    next: express.NextFunction
+  ): void => {
     // sendFile is smart:
     // - it adds Content-Type automatically
     // - it handles ranged requests
     // - it adds "Cache-Control: public", "ETag" and "Last-Modified" headers
-    res.sendFile(stripFilename, this.sendFileOptions(), next);
-  };
-
-  private sendFileOptions: any = () => {
-    return {
-      // Do not come back for some time; then, come with ETag for cache
-      // validation. sendFile will serve 304 if ETag matches.
-      maxAge: '30 minutes',
-    };
+    res.sendFile(
+      path,
+      {
+        // Do not come back for some time; then, come with ETag for cache
+        // validation. sendFile will serve 304 if ETag matches.
+        maxAge: '30 minutes',
+      },
+      err => {
+        if (err) {
+          console.error(`When sending ${path}: ${err}`);
+          next(err);
+        } else {
+          console.log(`Sent file ${path}`);
+        }
+      }
+    );
   };
 
   private renderStrip: RequestHandler = async (req, res, next) => {
@@ -246,12 +261,7 @@ export class App {
       pageInfo,
       !req.query.refresh
     );
-
-    // sendFile is smart:
-    // - it adds Content-Type automatically
-    // - it handles ranged requests
-    // - it adds "Cache-Control: public", "ETag" and "Last-Modified" headers
-    res.sendFile(stripFilename, this.sendFileOptions(), next);
+    this.sendFile(res, stripFilename, next);
   };
 
   private embedImage: RequestHandler = async (req, res, next) => {
@@ -260,11 +270,7 @@ export class App {
       req.query.id as string,
       parseInt(req.query[Renderer.versionParameterName] as string)
     );
-    res.sendFile(
-      await this.comicslate.renderStrip(pageInfo),
-      this.sendFileOptions(),
-      next
-    );
+    this.sendFile(res, await this.comicslate.renderStrip(pageInfo), next);
   };
 
   private embedJson: RequestHandler = async (req, res) => {
