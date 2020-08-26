@@ -161,7 +161,8 @@ export class Comicslate {
               numberOfValidComics += 1;
             } catch (e) {
               console.error(
-                `Failed to render the 1st story strip (${firstStripId}): ${e}`
+                `Failed to render the 1st story strip (${firstStripId})`,
+                e
               );
               comic.firstStripRenders = false;
             }
