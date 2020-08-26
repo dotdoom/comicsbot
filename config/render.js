@@ -3,12 +3,19 @@
 // captured as a screenshot, or any other object with "x", "y", "width" and
 // "height" properties.
 exports.findRect = () => {
-  const container =
-    document.querySelector('div.ct-container') ||
-    document.querySelector('div.fn-container') ||
-    document.querySelector('img.media');
-  if (container) {
-    return container.getBoundingClientRect().toJSON();
+  const selectors = [
+    'div.ct-container',
+    'div.fn-container',
+    'img.media',
+  ];
+
+  for (const selector of selectors) {
+    for (const container of document.querySelectorAll(selector)) {
+      const rect = container.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        return rect.toJSON();
+      }
+    }
   }
 
   throw 'Unable to find any image!';
