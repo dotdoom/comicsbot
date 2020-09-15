@@ -61,7 +61,17 @@ interface Config {
       // },
     })
   );
-  await doku.login(config.doku.user, config.doku.password);
+
+  while (1) {
+    try {
+      await doku.login(config.doku.user, config.doku.password);
+      break;
+    } catch (e) {
+      console.error(e);
+      // 5s delay.
+      await new Promise(r => setTimeout(r, 5000));
+    }
+  }
 
   const render = new Renderer(
     '../../config/render.js',
