@@ -265,6 +265,19 @@ export class App {
   };
 
   private embedImage: RequestHandler = async (req, res, next) => {
+    const extraQueryParams = Object.keys(req.query).filter(
+      param => !['id', Renderer.versionParameterName].includes(param)
+    );
+    if (extraQueryParams.length > 0) {
+      console.error(`Extra query parameters: ${extraQueryParams}.`);
+      res.redirect(
+        'https://upload.wikimedia.org/wikipedia/commons/1/14/Rubber_Duck_(8374802487).jpg'
+      );
+      return;
+    }
+
+    if (Object.keys(req.query)) {
+    }
     // TODO(dotdoom): handle links to comics / user page / strip / unknown.
     const pageInfo = await this.comicslate.doku.getPageInfo(
       req.query.id as string,
