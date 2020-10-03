@@ -37,6 +37,9 @@ export class Renderer {
     const render = this.loadRenderOptions();
     const browserPage = await this.browser.newPage();
     try {
+      // Render each strip anew; client is usually local, so the cost is low.
+      await browserPage.setCacheEnabled(false);
+
       if (this.deviceScaleFactor) {
         const viewport = browserPage.viewport();
         viewport.deviceScaleFactor = this.deviceScaleFactor;
