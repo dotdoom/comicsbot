@@ -17,6 +17,7 @@ interface Config {
     user: string;
     password: string;
     baseUrl: string;
+    address?: string;
   };
   app: {
     port: number;
@@ -30,15 +31,23 @@ interface Config {
 
 (async () => {
   const config: Config = require('../../config/config.json');
+  const baseUrl = new URL(config.doku.baseUrl);
 
   console.log('Starting browser...');
+  const browser_args = [
+    '--no-sandbox',
+    '--disable-setuid-sandbox',
+    // https://github.com/GoogleChrome/puppeteer/issues/2410
+    '--font-render-hinting=none',
+  ];
+  if (config.doku.address) {
+    // Map to localhost.
+    browser_args.push(
+      `--host-resolver-rules=MAP ${baseUrl.host} ${config.doku.address}`
+    );
+  }
   const browser = await puppeteer.launch({
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      // https://github.com/GoogleChrome/puppeteer/issues/2410
-      '--font-render-hinting=none',
-    ],
+    args: browser_args,
     handleSIGINT: false,
     handleSIGTERM: false,
     handleSIGHUP: false,
@@ -46,19 +55,22 @@ interface Config {
   onExit(() => browser.close());
 
   console.log('Logging in to Doku...');
-  const baseUrl = new URL(config.doku.baseUrl);
   const xmlrpcConstructor =
     baseUrl.protocol === 'http:'
       ? xmlrpc.createClient
       : xmlrpc.createSecureClient;
   const xmlrpcURL = new URL('lib/exe/xmlrpc.php', baseUrl);
+  if (config.doku.address) {
+    xmlrpcURL.host = config.doku.address;
+  }
   const doku = new Doku(
     xmlrpcConstructor({
       url: xmlrpcURL.href,
       cookies: true,
-      // headers: {
-      //   'User-Agent': await browser.userAgent(),
-      // },
+      headers: {
+        'User-Agent': await browser.userAgent(),
+        Host: baseUrl.host,
+      },
     })
   );
 

@@ -3,7 +3,8 @@
   "doku": {
     "user": "dokubot",
     "password": "supers3cr3t",
-    "baseUrl": "https://comicslate.org/"
+    "baseUrl": "https://comicslate.org/",
+    "address": "127.0.0.1"
   },
   "app": {
     "port": 8081,
