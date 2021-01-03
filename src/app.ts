@@ -48,7 +48,10 @@ const clientLanguage = (comicslate: Comicslate): RequestHandler => {
   };
 };
 
-const jsonApi = (handler: RequestHandler): RequestHandler => {
+// TODO(dotdoom): find a better way to inject middleware.
+type JsonRequestHandler = (req: any, res: any, next: any) => any;
+
+const jsonApi = (handler: JsonRequestHandler): RequestHandler => {
   return async (req, res, next) => {
     try {
       let reply = handler(req, res, next);
