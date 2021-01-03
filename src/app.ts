@@ -223,13 +223,14 @@ export class App {
       !req.query.refresh
     );
 
-    this.sendFile(res, stripFilename, next);
+    this.sendFile(res, stripFilename, next, false);
   };
 
   private sendFile = (
     res: express.Response<any>,
     path: string,
-    next: express.NextFunction
+    next: express.NextFunction,
+    immutable: boolean
   ): void => {
     // sendFile is smart:
     // - it adds Content-Type automatically
@@ -238,9 +239,10 @@ export class App {
     res.sendFile(
       path,
       {
-        // Do not come back for some time; then, come with ETag for cache
-        // validation. sendFile will serve 304 if ETag matches.
-        maxAge: '30 minutes',
+        // Come with ETag for cache validation upon expiration, or all the time
+        // (if immutable=false). sendFile will just serve 304 if ETag matches.
+        immutable: immutable,
+        maxAge: '1 day',
       },
       err => {
         if (err) {
@@ -264,7 +266,7 @@ export class App {
       pageInfo,
       !req.query.refresh
     );
-    this.sendFile(res, stripFilename, next);
+    this.sendFile(res, stripFilename, next, false);
   };
 
   private embedImage: RequestHandler = async (req, res, next) => {
@@ -279,14 +281,18 @@ export class App {
       return;
     }
 
-    if (Object.keys(req.query)) {
-    }
     // TODO(dotdoom): handle links to comics / user page / strip / unknown.
     const pageInfo = await this.comicslate.doku.getPageInfo(
       req.query.id as string,
       parseInt(req.query[Renderer.versionParameterName] as string)
     );
-    this.sendFile(res, await this.comicslate.renderStrip(pageInfo), next);
+    this.sendFile(
+      res,
+      await this.comicslate.renderStrip(pageInfo),
+      next,
+      // Enable cache when version parameter is specified.
+      !!req.query[Renderer.versionParameterName]
+    );
   };
 
   private embedJson: RequestHandler = async (req, res) => {
