@@ -12,8 +12,7 @@ export function onExit(callback: () => Promise<void> | void) {
   process.on('beforeExit', callbackOnce);
   for (const signal of signals) {
     process.on(signal, async signal => {
-      // https://nodejs.org/api/process.html#process_signal_events
-      process.exitCode = 128 /* TODO(dotdoom): + signal number */;
+      process.exitCode = 0;
       try {
         await callbackOnce();
       } finally {
