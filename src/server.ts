@@ -1,12 +1,12 @@
 import * as puppeteer from 'puppeteer';
-import {URL} from 'url';
+import { URL } from 'url';
 import * as xmlrpc from 'xmlrpc';
-import {App} from './app';
-import {Bot} from './bot';
-import {Comicslate} from './comicslate';
-import {Doku} from './doku';
-import {onExit} from './on_exit';
-import {Renderer} from './render';
+import { App } from './app';
+import { Bot } from './bot';
+import { Comicslate } from './comicslate';
+import { Doku } from './doku';
+import { onExit } from './on_exit';
+import { Renderer } from './render';
 
 // Used by our .service initfile to find the bot process.
 process.title = 'comicsbot';
@@ -46,13 +46,19 @@ interface Config {
       `--host-resolver-rules=MAP ${baseUrl.host} ${config.doku.address}`
     );
   }
-  const browser = await puppeteer.launch({
-    args: browser_args,
-    handleSIGINT: false,
-    handleSIGTERM: false,
-    handleSIGHUP: false,
-  });
-  onExit(() => browser.close());
+  var browser: puppeteer.Browser | null = null;
+  try {
+    browser = await puppeteer.launch({
+      args: browser_args,
+      handleSIGINT: false,
+      handleSIGTERM: false,
+      handleSIGHUP: false,
+    });
+    onExit(() => browser?.close());
+  } catch (e) {
+    console.error('Failed to launch browser, rendering will not be available');
+    console.error(e);
+  }
 
   console.log('Logging in to Doku...');
   const xmlrpcConstructor =
@@ -68,7 +74,7 @@ interface Config {
       url: xmlrpcURL.href,
       cookies: true,
       headers: {
-        'User-Agent': await browser.userAgent(),
+        'User-Agent': (await browser?.userAgent()) || 'comicsbot (render off)',
         Host: baseUrl.host,
       },
     })

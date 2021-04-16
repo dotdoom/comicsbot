@@ -12,13 +12,13 @@ export class Renderer {
   static readonly versionParameterName = 'rev';
 
   private readonly renderOptionsFile: string;
-  private readonly browser: puppeteer.Browser;
+  private readonly browser: puppeteer.Browser | null;
   private readonly baseDirectory: string;
   private readonly deviceScaleFactor?: number;
 
   constructor(
     renderOptionsFile: string,
-    browser: puppeteer.Browser,
+    browser: puppeteer.Browser | null,
     baseDirectory: string,
     deviceScaleFactor?: number
   ) {
@@ -28,12 +28,17 @@ export class Renderer {
     this.deviceScaleFactor = deviceScaleFactor;
   }
 
-  version = (): Promise<string> => this.browser.version();
+  version = async (): Promise<string> =>
+    (await this.browser?.version()) || '[Rendering disabled]';
 
   renderSinglePage = async (
     url: URL,
     baseDirectory: string = this.baseDirectory
   ): Promise<string> => {
+    if (this.browser == null) {
+      throw Error('Rendering disabled: browser has not been launched');
+    }
+
     const render = this.loadRenderOptions();
     const browserPage = await this.browser.newPage();
     try {
