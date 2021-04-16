@@ -59,6 +59,7 @@ export class Comicslate {
   private readonly render: Renderer;
   private readonly baseUrl: URL;
   private readonly cacheFileName: string;
+  private readonly acceptComic: (path: string) => boolean;
   private comicsCache: {
     [language: string]: Comic[];
   } = {};
@@ -69,12 +70,23 @@ export class Comicslate {
     doku: doku.Doku,
     render: Renderer,
     baseUrl: URL,
-    cacheDirectory: string
+    cacheDirectory: string,
+    bannedComicRegex?: string[]
   ) {
     this.doku = doku;
     this.baseUrl = baseUrl;
     this.render = render;
     this.cacheFileName = path.join(cacheDirectory, 'comics.json');
+
+    if (bannedComicRegex) {
+      const bannedComicRegexCompiled = bannedComicRegex.map(r =>
+        RegExp(r, 'is')
+      );
+      this.acceptComic = path =>
+        !bannedComicRegexCompiled.some(r => r.test(path));
+    } else {
+      this.acceptComic = _ => true;
+    }
 
     this.initialized = this.scanAllComics();
     setInterval(this.scanAllComics, 10 * 60 * 1000);
@@ -368,11 +380,11 @@ export class Comicslate {
         // tslint:disable-next-line:no-conditional-assignment
         (match = line.match(/\*.*\[\[([^\]]+)\]\](.*)/))
       ) {
-        if (match[1].includes('simpson') || match[1].includes('crime')) {
-          console.warn(`Skipping ${match[1]} because it's banned`);
+        const ratings = match[2].match(/[@*]\w+[@*]/g) || [];
+        if (!this.acceptComic(match[1])) {
+          console.warn(`Comic '${match[1]}' has not been accepted.`);
           continue;
         }
-        const ratings = match[2].match(/[@*]\w+[@*]/g) || [];
         comics.push(
           this.fetchComicsForMenuEntry(
             language,
