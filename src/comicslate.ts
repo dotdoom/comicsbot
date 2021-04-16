@@ -368,6 +368,10 @@ export class Comicslate {
         // tslint:disable-next-line:no-conditional-assignment
         (match = line.match(/\*.*\[\[([^\]]+)\]\](.*)/))
       ) {
+        if (match[1].includes('simpson') || match[1].includes('crime')) {
+          console.warn(`Skipping ${match[1]} because it's banned`);
+          continue;
+        }
         const ratings = match[2].match(/[@*]\w+[@*]/g) || [];
         comics.push(
           this.fetchComicsForMenuEntry(
