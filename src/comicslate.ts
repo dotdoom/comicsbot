@@ -256,8 +256,18 @@ export class Comicslate {
     categoryName: string | undefined,
     ratings: ComicRating[]
   ): Promise<Comic[]> => {
+    if (!this.acceptComic(menuEntry)) {
+      console.warn(`Comic '${menuEntry}' has not been accepted, skipping.`);
+      return [];
+    }
+
     menuEntry = this.pathToId(menuEntry);
     const indexPage = await this.doku.getPage(menuEntry.toString());
+
+    if (indexPage.match('<note adult>')) {
+      console.warn(`Comic '${menuEntry}' is marked Adult Content, skipping.`);
+      return [];
+    }
 
     const comicTemplate: Comic = {
       id: menuEntry.replace(/:index$/, ''),
@@ -381,10 +391,6 @@ export class Comicslate {
         (match = line.match(/\*.*\[\[([^\]]+)\]\](.*)/))
       ) {
         const ratings = match[2].match(/[@*]\w+[@*]/g) || [];
-        if (!this.acceptComic(match[1])) {
-          console.warn(`Comic '${match[1]}' has not been accepted.`);
-          continue;
-        }
         comics.push(
           this.fetchComicsForMenuEntry(
             language,
