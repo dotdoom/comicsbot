@@ -1,4 +1,5 @@
 import * as puppeteer from 'puppeteer';
+import * as se from 'sightengine';
 import {URL} from 'url';
 import * as xmlrpc from 'xmlrpc';
 import {App} from './app';
@@ -23,6 +24,10 @@ interface Config {
     port: number;
     cacheDirectory: string;
     bannedComicRegex?: string[];
+    sightengine?: {
+      user: string;
+      secret: string;
+    };
   };
   render: {
     baseDirectory: string;
@@ -107,11 +112,15 @@ interface Config {
     config.app.bannedComicRegex
   );
 
+  const sightengine = config.app.sightengine
+    ? se(config.app.sightengine.user, config.app.sightengine.secret)
+    : null;
+
   console.log('Initializing Wiki...');
   await comicslate.initialized;
 
   console.log('Starting API server...');
-  const app = new App(comicslate);
+  const app = new App(comicslate, sightengine);
   app.express.listen(config.app.port);
 
   if (config.discordToken) {

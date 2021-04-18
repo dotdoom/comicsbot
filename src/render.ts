@@ -44,6 +44,9 @@ export class Renderer {
     try {
       // Render each strip anew; client is usually local, so the cost is low.
       await browserPage.setCacheEnabled(false);
+      // Bump the default timeout of 30s to 300s (useful when we spawn a lot of
+      // workers e.g. during scanning).
+      await browserPage.setDefaultNavigationTimeout(300000);
 
       if (this.deviceScaleFactor) {
         const viewport = browserPage.viewport();

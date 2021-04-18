@@ -8,7 +8,12 @@
   },
   "app": {
     "port": 8081,
-    "cacheDirectory": "/var/www/comicslate.org/data/cache"
+    "cacheDirectory": "/var/www/comicslate.org/data/cache",
+    "bannedComicRegex": ["living.*with.*girl", "simpson"],
+    "sightengine": {
+      "user": "abc123",
+      "secret": "321cba"
+    }
   },
   "render": {
     "baseDirectory": "/var/www/comicslate.org/data/media/u",

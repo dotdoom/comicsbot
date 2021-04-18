@@ -1,6 +1,7 @@
 import * as acceptLanguage from 'accept-language-parser';
 import * as express from 'express';
 import {Application, RequestHandler} from 'express';
+import * as fs from 'fs';
 import * as moment from 'moment';
 import * as morgan from 'morgan';
 import {Comicslate, PageId} from './comicslate';
@@ -96,9 +97,11 @@ const errorHandler: express.ErrorRequestHandler = (err, req, res, next) => {
 export class App {
   readonly express: Application;
   private readonly comicslate: Comicslate;
+  private readonly sightengine: any;
 
-  constructor(comicslate: Comicslate) {
+  constructor(comicslate: Comicslate, sightengine: any) {
     this.comicslate = comicslate;
+    this.sightengine = sightengine;
     this.express = express()
       .use(
         morgan('combined'),
@@ -266,6 +269,30 @@ export class App {
       pageInfo,
       !req.query.refresh
     );
+
+    let approvedFilename = stripFilename;
+    if (this.sightengine) {
+      approvedFilename = stripFilename.replace(
+        /([.][^./]+)$/,
+        (_, ext) => '_approved' + ext
+      );
+      if (fs.existsSync(approvedFilename)) {
+        console.log(`Already approved for safety: ${approvedFilename}`);
+      } else {
+        console.log(`Requesting safety information for ${approvedFilename}...`);
+        try {
+          const safety = await this.sightengine
+            .check(['nudity', 'wad', 'offensive', 'text-content'])
+            .set_file(stripFilename);
+          console.log(safety);
+          fs.copyFileSync(stripFilename, approvedFilename);
+        } catch (e) {
+          console.warn(`Could not request safety for ${approvedFilename}:`);
+          console.error(e);
+        }
+      }
+    }
+
     this.sendFile(res, stripFilename, next, false);
   };
 
