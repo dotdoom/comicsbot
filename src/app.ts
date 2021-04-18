@@ -270,30 +270,26 @@ export class App {
       !req.query.refresh
     );
 
-    let approvedFilename = stripFilename;
     if (this.sightengine) {
-      approvedFilename = stripFilename.replace(
-        /([.][^./]+)$/,
-        (_, ext) => '_approved' + ext
-      );
-      if (fs.existsSync(approvedFilename)) {
-        console.log(`Already approved for safety: ${approvedFilename}`);
+      const safetyCache = stripFilename.replace(/[.][^./]+$/, '_safety.json');
+      if (fs.existsSync(safetyCache)) {
+        console.log(`Already checked for safety: ${safetyCache}`);
       } else {
-        console.log(`Requesting safety information for ${approvedFilename}...`);
+        console.log(`Requesting safety information for ${safetyCache}...`);
         try {
           const safety = await this.sightengine
             .check(['nudity', 'wad', 'offensive', 'text-content'])
             .set_file(stripFilename);
           console.log(safety);
           if (safety.status === 'success') {
-            fs.copyFileSync(stripFilename, approvedFilename);
+            fs.writeFileSync(safetyCache, JSON.stringify(safety));
           } else {
             if (safety.error.type === 'usage_limit') {
               console.log('Usage limit achieved on safety API!');
             }
           }
         } catch (e) {
-          console.warn(`Could not request safety for ${approvedFilename}:`);
+          console.warn(`Could not request safety for ${safetyCache}:`);
           console.error(e);
         }
       }
