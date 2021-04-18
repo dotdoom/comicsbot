@@ -273,23 +273,59 @@ export class App {
     if (this.sightengine) {
       const safetyCache = stripFilename.replace(/[.][^./]+$/, '_safety.json');
       if (fs.existsSync(safetyCache)) {
-        console.log(`Already checked for safety: ${safetyCache}`);
+        console.log(`Already checked for safety: see ${safetyCache}.`);
       } else {
-        console.log(`Requesting safety information for ${safetyCache}...`);
         try {
-          const safety = await this.sightengine
+          const safety = (await this.sightengine
             .check(['nudity', 'wad', 'offensive', 'text-content'])
-            .set_file(stripFilename);
-          console.log(safety);
+            .set_file(stripFilename)) as {
+            status: string;
+            request: {
+              id: string;
+              timestamp: number;
+              operations: number;
+            };
+            error?: {
+              type: string;
+              code: number;
+              message: string;
+            };
+            media: any;
+            // 'nudity' results.
+            nudity?: {
+              raw: number;
+              partial: number;
+              partial_tag?: string;
+              safe: number;
+            };
+            // 'wad' results
+            weapon?: number;
+            alcohol?: number;
+            drugs?: number;
+            // 'offensive' results
+            offensive?: {
+              prob: number;
+              boxes?: any;
+            };
+            // 'text-content' results
+            text?: {
+              profanity: any;
+              personal: any;
+              link: any;
+              ignored_text: boolean;
+            };
+          };
           if (safety.status === 'success') {
             fs.writeFileSync(safetyCache, JSON.stringify(safety));
           } else {
-            if (safety.error.type === 'usage_limit') {
-              console.log('Usage limit achieved on safety API!');
+            if (safety.error?.type === 'usage_limit') {
+              console.warn('Usage limit achieved on safety API.');
+            } else {
+              console.log(safety);
             }
           }
         } catch (e) {
-          console.warn(`Could not request safety for ${safetyCache}:`);
+          console.warn(`Could not request safety into ${safetyCache}:`);
           console.error(e);
         }
       }
