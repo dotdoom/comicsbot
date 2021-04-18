@@ -285,7 +285,13 @@ export class App {
             .check(['nudity', 'wad', 'offensive', 'text-content'])
             .set_file(stripFilename);
           console.log(safety);
-          fs.copyFileSync(stripFilename, approvedFilename);
+          if (safety.status === 'success') {
+            fs.copyFileSync(stripFilename, approvedFilename);
+          } else {
+            if (safety.error.type === 'usage_limit') {
+              console.log('Usage limit achieved on safety API!');
+            }
+          }
         } catch (e) {
           console.warn(`Could not request safety for ${approvedFilename}:`);
           console.error(e);
