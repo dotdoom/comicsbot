@@ -8,7 +8,7 @@
   },
   "app": {
     "port": 8081,
-    "cacheDirectory": "/var/www/comicslate.org/data/cache",
+    "cachePage": "user:dokubot:cache",
     "bannedComicRegex": ["living.*with.*girl", "simpson"],
     "sightengine": {
       "user": "abc123",

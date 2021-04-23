@@ -1,5 +1,4 @@
 import * as fs from 'fs';
-import * as path from 'path';
 import {URL} from 'url';
 import * as doku from './doku';
 import {Renderer} from './render';
@@ -58,8 +57,7 @@ export class Comicslate {
   readonly doku: doku.Doku;
   private readonly render: Renderer;
   private readonly baseUrl: URL;
-  private readonly cacheFileName: string;
-  private readonly dokuUser: string;
+  private readonly cachePage: string;
   private readonly acceptComic: (path: string) => boolean;
   private comicsCache: {
     [language: string]: Comic[];
@@ -71,15 +69,13 @@ export class Comicslate {
     doku: doku.Doku,
     render: Renderer,
     baseUrl: URL,
-    cacheDirectory: string,
-    dokuUser: string,
+    cachePage: string,
     bannedComicRegex?: string[]
   ) {
     this.doku = doku;
     this.baseUrl = baseUrl;
     this.render = render;
-    this.cacheFileName = path.join(cacheDirectory, 'comics.json');
-    this.dokuUser = dokuUser;
+    this.cachePage = cachePage;
 
     if (bannedComicRegex) {
       const bannedComicRegexCompiled = bannedComicRegex.map(r =>
@@ -99,7 +95,10 @@ export class Comicslate {
     if (!Object.keys(this.comicsCache).length) {
       try {
         this.comicsCache = JSON.parse(
-          fs.readFileSync(this.cacheFileName).toString()
+          (await this.doku.getPage(this.cachePage)).replace(
+            /^<code>|<[/]code>$/g,
+            ''
+          )
         );
 
         let numberOfComics = 0;
@@ -115,7 +114,7 @@ export class Comicslate {
       } catch (e) {
         this.comicsCache = {};
         console.error(
-          `Error loading comics cache from file ${this.cacheFileName}`,
+          `Error loading comics cache from page ${this.cachePage}`,
           e
         );
       }
@@ -148,12 +147,10 @@ export class Comicslate {
     console.info(
       `Comics validated (valid: ${numberOfValidComics}), saving cache`
     );
-    const prettyComicsCache = JSON.stringify(this.comicsCache, null, 2);
-    fs.writeFileSync(this.cacheFileName, prettyComicsCache);
-    // Save asynchronously, we don't care about content right now.
+    // Don't wait for the write to finish and return ASAP.
     this.doku.putPage(
-      `user:${this.dokuUser}`,
-      `<code>${prettyComicsCache}</code>`,
+      this.cachePage,
+      `<code>${JSON.stringify(this.comicsCache, null, 2)}</code>`,
       `${numberOfValidComics} valid comics`
     );
   };

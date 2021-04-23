@@ -22,7 +22,7 @@ interface Config {
   };
   app: {
     port: number;
-    cacheDirectory: string;
+    cachePage: string;
     bannedComicRegex?: string[];
     sightengine?: {
       user: string;
@@ -108,8 +108,7 @@ interface Config {
     doku,
     render,
     baseUrl,
-    config.app.cacheDirectory,
-    config.doku.user,
+    config.app.cachePage,
     config.app.bannedComicRegex
   );
 
