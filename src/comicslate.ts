@@ -153,7 +153,8 @@ export class Comicslate {
     // Save asynchronously, we don't care about content right now.
     this.doku.putPage(
       `user:${this.dokuUser}`,
-      `<code>${prettyComicsCache}</code>`
+      `<code>${prettyComicsCache}</code>`,
+      `${numberOfValidComics} valid comics`
     );
   };
 
