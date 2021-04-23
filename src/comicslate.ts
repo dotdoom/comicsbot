@@ -121,7 +121,10 @@ export class Comicslate {
     }
 
     console.info('Scanning all comics...');
-    for (const page of await this.doku.getPagelist('', {depth: 2})) {
+    const rootPages = (
+      await this.doku.getPagelist('', {depth: 2})
+    ).sort((a, b) => a.id.localeCompare(b.id));
+    for (const page of rootPages) {
       if (page.id.endsWith(Comicslate.menuPage)) {
         const language = page.id.slice(0, -Comicslate.menuPage.length);
         console.log(`- Language ${language}...`);
