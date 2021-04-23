@@ -109,6 +109,7 @@ interface Config {
     render,
     baseUrl,
     config.app.cacheDirectory,
+    config.doku.user,
     config.app.bannedComicRegex
   );
 

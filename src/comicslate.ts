@@ -59,6 +59,7 @@ export class Comicslate {
   private readonly render: Renderer;
   private readonly baseUrl: URL;
   private readonly cacheFileName: string;
+  private readonly dokuUser: string;
   private readonly acceptComic: (path: string) => boolean;
   private comicsCache: {
     [language: string]: Comic[];
@@ -71,12 +72,14 @@ export class Comicslate {
     render: Renderer,
     baseUrl: URL,
     cacheDirectory: string,
+    dokuUser: string,
     bannedComicRegex?: string[]
   ) {
     this.doku = doku;
     this.baseUrl = baseUrl;
     this.render = render;
     this.cacheFileName = path.join(cacheDirectory, 'comics.json');
+    this.dokuUser = dokuUser;
 
     if (bannedComicRegex) {
       const bannedComicRegexCompiled = bannedComicRegex.map(r =>
@@ -145,9 +148,12 @@ export class Comicslate {
     console.info(
       `Comics validated (valid: ${numberOfValidComics}), saving cache`
     );
-    fs.writeFileSync(
-      this.cacheFileName,
-      JSON.stringify(this.comicsCache, null, 2)
+    const prettyComicsCache = JSON.stringify(this.comicsCache, null, 2);
+    fs.writeFileSync(this.cacheFileName, prettyComicsCache);
+    // Save asynchronously, we don't care about content right now.
+    this.doku.putPage(
+      `user:${this.dokuUser}`,
+      `<code>${prettyComicsCache}</code>`
     );
   };
 

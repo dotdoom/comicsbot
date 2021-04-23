@@ -109,6 +109,16 @@ export class Doku {
         ])
       : this.methodCall('wiki.getPage', [pagename])) as Promise<string>;
 
+  putPage = (pagename: string, rawText: string, summary?: string) =>
+    this.methodCall('wiki.putPage', [
+      pagename,
+      rawText,
+      {
+        sum: summary,
+        minor: !summary,
+      },
+    ]);
+
   getCookies = (): Cookie[] => {
     const cookies = this.client.cookies;
     if (cookies !== undefined) {
