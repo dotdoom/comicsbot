@@ -361,7 +361,10 @@ export class App {
   };
 
   private embedJson: RequestHandler = async (req, res) => {
-    const page = this.comicslate.pageId(req.query.id as string)!;
+    const page = this.comicslate.pageId(req.query.id as string);
+    if (!page) {
+      throw Error(`Comic strip ${req.query.id} (or language) is unknown`);
+    }
 
     const versionStr = req.query[Renderer.versionParameterName];
     let version;
