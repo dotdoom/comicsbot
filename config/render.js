@@ -18,5 +18,5 @@ exports.findRect = () => {
     }
   }
 
-  throw 'Unable to find any image!';
+  throw 'Unable to find any image at ' + window.location.href;
 };
