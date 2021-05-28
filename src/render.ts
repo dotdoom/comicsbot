@@ -56,27 +56,12 @@ export class Renderer {
         }
       }
 
-      // TODO(dotdoom): when we have 18+ control in Discord.
+      // TODO(dotdoom): when we have 18+ control in Discord/App.
       //await browserPage.setCookie(...this.doku.getCookies());
-      await browserPage.goto(url.href);
+      await browserPage.goto(url.href, {waitUntil: 'networkidle0'});
 
       const clip = (await browserPage.evaluate(render.findRect)) as DOMRect;
       const clipDebugString = `rect[${clip.left}, ${clip.top}; ${clip.right}, ${clip.bottom}]`;
-      const viewport = browserPage.viewport();
-      if (viewport) {
-        if (viewport.height < clip.bottom || viewport.width < clip.right) {
-          console.log(
-            `resizing viewport ${viewport.width}x${viewport.height} to fit ` +
-              clipDebugString
-          );
-          // Must resize viewport to get the full element on the screen:
-          // https://github.com/puppeteer/puppeteer/issues/5080
-          viewport.width = Math.ceil(clip.right);
-          viewport.height = Math.ceil(clip.bottom);
-        }
-        await browserPage.setViewport(viewport);
-      }
-
       const renderFilename = this.renderFilename(url, baseDirectory);
       console.info(
         `rendering page ${url} ${clipDebugString} into ` + renderFilename
