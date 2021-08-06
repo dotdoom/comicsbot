@@ -4,6 +4,7 @@ import {Application, RequestHandler} from 'express';
 import * as fs from 'fs';
 import * as moment from 'moment';
 import * as morgan from 'morgan';
+import * as requestIp from 'request-ip';
 import {Comicslate, PageId} from './comicslate';
 import {Renderer} from './render';
 
@@ -106,6 +107,8 @@ export class App {
   constructor(comicslate: Comicslate, sightengine: any) {
     this.comicslate = comicslate;
     this.sightengine = sightengine;
+    // Resolve IP addresses from behind reverse proxy and a CDN.
+    morgan.token('requestIp', req => requestIp.getClientIp(req) || undefined);
     this.express = express()
       .use(
         morgan('combined'),
