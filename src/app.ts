@@ -43,6 +43,10 @@ const clientLanguage = (comicslate: Comicslate): RequestHandler => {
         `For ${acceptLanguageHeader} picked ` +
           `${res.locals.language};q=${maxQuality}`
       );
+    } else {
+      console.info(
+        `Automatically picked ${res.locals.language} due to missing header`
+      );
     }
 
     next();
