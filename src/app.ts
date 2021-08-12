@@ -107,6 +107,8 @@ export class App {
     this.comicslate = comicslate;
     this.sightengine = sightengine;
     this.express = express()
+      // We should be running behind a reverse proxy, trust the XFF header.
+      .enable('trust proxy')
       .use(
         morgan('combined'),
         express.urlencoded({extended: true}),
