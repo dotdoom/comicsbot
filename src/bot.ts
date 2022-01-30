@@ -112,6 +112,7 @@ export class Bot {
 Bot: https://github.com/dotdoom/comicsbot/tree/${stdout.trim()}
 Renderer: \`${await this.renderer.version()}\`
 Doku: \`${await this.comicslate.doku.getVersion()}\`
+Render stats:\n\`\`\`${this.renderer.stats}\`\`\`
 `);
       });
     }
