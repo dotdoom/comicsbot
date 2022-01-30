@@ -10,7 +10,7 @@ interface RenderOptions {
 
 export class RendererStats {
   private lastFailedRenderURL?: URL;
-  private lastFailedRenderReason?: string;
+  private lastFailedRenderReason?: any;
   private numRenderRequests = 0;
   private numRenderFailures = 0;
   private inFlightRenders: URL[] = [];
@@ -46,7 +46,7 @@ export class RendererStats {
     if (this.inFlightRenders.length > 0) {
       summary +=
         ` and ${this.inFlightRenders.length} are still in-flight` +
-        `: ${this.inFlightRenders}`;
+        `: ${this.inFlightRenders.slice(3)}`;
     }
     return summary;
   };
