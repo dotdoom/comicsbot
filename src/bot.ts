@@ -1,3 +1,4 @@
+import {MarkovChain} from 'acausal';
 import {exec} from 'child_process';
 import * as discord from 'discord.js';
 import {Comicslate} from './comicslate';
@@ -17,6 +18,7 @@ export class Bot {
   private readonly client: discord.Client;
   private readonly renderer: Renderer;
   private readonly comicslate: Comicslate;
+  private readonly chatters: {[channelId: string]: MarkovChain} = {};
 
   constructor(renderer: Renderer, comicslate: Comicslate) {
     this.renderer = renderer;
@@ -123,10 +125,26 @@ export class Bot {
     if (channel instanceof discord.DMChannel) {
       console.log(`Got a direct message from user ${message.author.username}`);
     } else if (channel instanceof discord.TextChannel) {
+      if (!(message.channelId in this.chatters)) {
+        this.chatters[message.channelId] = new MarkovChain({seed: 1});
+      }
+      this.chatters[message.channelId].addSequence(
+        message.cleanContent.split(' ')
+      );
       console.log(
         `Got a message ${message.content} [CLEAN:${message.cleanContent}] ` +
           `from user ${message.author.username} in channel ` +
           `${message.channelId} server ${message.guild?.name}`
+      );
+      console.log(
+        `Would reply: ${this.chatters[message.channelId]
+          .generate({
+            min: 4,
+            max: 30,
+            order: 1,
+            strict: false,
+          })
+          .join(' ')}`
       );
     }
     if (this.client.user !== null && message.mentions.has(this.client.user)) {
