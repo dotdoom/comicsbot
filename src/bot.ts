@@ -1,7 +1,7 @@
-import { exec } from 'child_process';
+import {exec} from 'child_process';
 import * as discord from 'discord.js';
-import { Comicslate } from './comicslate';
-import { Renderer } from './render';
+import {Comicslate} from './comicslate';
+import {Renderer} from './render';
 
 enum Emoji {
   OK = '\u{1f44c}',
@@ -37,19 +37,22 @@ export class Bot {
         discord.Intents.FLAGS.GUILD_MESSAGES,
         discord.Intents.FLAGS.DIRECT_MESSAGES,
       ],
-  })
+      partials: ['MESSAGE', 'CHANNEL'],
+    })
       .on('error', this.logGenericEvent('error'))
       .on('debug', this.logGenericEvent('debug'))
       .on('warn', this.logGenericEvent('warn'))
       .on('disconnect', this.logGenericEvent('disconnect'))
       .on('rateLimit', this.logGenericEvent('rateLimit'))
       .on('webhookUpdate', this.logGenericEvent('webhookUpdate'))
-      .on('message', this.message)
+      .on('messageCreate', this.message)
       .on('ready', () => {
         this.client.guilds.cache.forEach(async guild => {
           console.log(
-            `Joined Discord server: ${guild.name} ` +
-              `[${guild.preferredLocale}] (owned by ${(await guild!.fetchOwner()).user.tag})`
+            `\nJoined Discord server: ${guild.name} ` +
+              `| locale:${guild.preferredLocale} | owner:${
+                (await guild!.fetchOwner()).user.tag
+              } | since:${guild.createdAt} | joined:${guild.joinedAt}`
           );
           guild.channels.cache.forEach(channel => {
             const permissions = channel.permissionsFor(guild.me!);
@@ -73,13 +76,18 @@ export class Bot {
                   discord.Permissions.FLAGS.USE_VAD,
                   discord.Permissions.FLAGS.MANAGE_WEBHOOKS,
                   discord.Permissions.FLAGS.MANAGE_EMOJIS_AND_STICKERS,
+                  discord.Permissions.FLAGS.ATTACH_FILES,
+                  discord.Permissions.FLAGS.EMBED_LINKS,
+                  discord.Permissions.FLAGS.SEND_MESSAGES_IN_THREADS,
+                  discord.Permissions.FLAGS.USE_EXTERNAL_STICKERS,
+                  discord.Permissions.FLAGS.START_EMBEDDED_ACTIVITIES,
                 ])
                 .toArray()
-                .join(',');
+                .join(', ');
               console.log(
-                ` - channel "${channel.name}", ` +
-                  `type: "${channel.type}", ` +
-                  `permissions: ${stringPermissions}`
+                ` - channel "${channel.name}"\n` +
+                  `   type: "${channel.type}"\n` +
+                  `   permissions: ${stringPermissions}`
               );
             }
           });
@@ -91,9 +99,14 @@ export class Bot {
 
   destroy = () => this.client.destroy();
 
-  private logGenericEvent = (eventName: string) => (...args: Array<{}>) => {
-    console.log('Event ', eventName, ' with args ', args);
-  };
+  private logGenericEvent =
+    (eventName: string) =>
+    (...args: Array<{}>) => {
+      console.log(
+        `Discord bot received event "${eventName}" with args:\n`,
+        args
+      );
+    };
 
   private message = async (message: discord.Message) => {
     if (message.author.id === this.client.user?.id) {
@@ -112,20 +125,22 @@ export class Bot {
     } else if (channel instanceof discord.TextChannel) {
       console.log(
         `Got a message ${message.content} [CLEAN:${message.cleanContent}] ` +
-        `from user ${message.author.username} in channel ` +
-        `${message.channelId} server ${message.guild?.name}`
+          `from user ${message.author.username} in channel ` +
+          `${message.channelId} server ${message.guild?.name}`
       );
     }
     if (this.client.user !== null && message.mentions.has(this.client.user)) {
       message.react(Emoji.Cat);
 
       exec('git rev-parse HEAD', async (error, stdout, stderr) => {
-        message.reply(`I'm alive.
-Bot: https://github.com/dotdoom/comicsbot/tree/${stdout.trim()}
+        const reply = await message.reply(`I'm alive.
+Bot: \`https://github.com/dotdoom/comicsbot/tree/${stdout.trim()}\`
 Renderer: \`${await this.renderer.version()}\`
 Doku: \`${await this.comicslate.doku.getVersion()}\`
 Render stats:\n\`\`\`${this.renderer.stats}\`\`\`
 `);
+        // Delete our reply 5 minutes later to keep the chat clean.
+        setTimeout(() => reply.delete(), 5 * 60 * 1000);
       });
     }
   };
