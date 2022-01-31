@@ -1,5 +1,8 @@
 {
-  "discordToken": "abcd.1234",
+  "discord": {
+    "token": "abcd.1234",
+    "chatterDataDirectory": "/var/www/comicslate.org/chat"
+  },
   "doku": {
     "user": "dokubot",
     "password": "supers3cr3t",

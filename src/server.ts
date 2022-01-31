@@ -13,7 +13,10 @@ import {Renderer} from './render';
 process.title = 'comicsbot';
 
 interface Config {
-  discordToken: string;
+  discord: {
+    token: string;
+    chatterDataDirectory: string;
+  };
   doku: {
     user: string;
     password: string;
@@ -123,10 +126,14 @@ interface Config {
   const app = new App(comicslate, sightengine);
   app.express.listen(config.app.port);
 
-  if (config.discordToken) {
+  if (config.discord) {
     console.log('Starting Discord bot...');
-    const bot = new Bot(render, comicslate);
-    bot.connect(config.discordToken);
+    const bot = new Bot(
+      render,
+      comicslate,
+      config.discord.chatterDataDirectory
+    );
+    bot.connect(config.discord.token);
     onExit(() => bot.destroy());
   }
 

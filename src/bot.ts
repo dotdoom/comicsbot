@@ -1,6 +1,9 @@
 import {MarkovChain} from 'acausal';
 import {exec} from 'child_process';
 import * as discord from 'discord.js';
+import * as fs from 'fs';
+import * as mkdirp from 'mkdirp';
+import * as path from 'path';
 import {Comicslate} from './comicslate';
 import {Renderer} from './render';
 
@@ -14,15 +17,71 @@ enum Emoji {
   GlowingStar = '\u{1f31f}',
 }
 
+class Chatter {
+  private readonly chain: MarkovChain = new MarkovChain({seed: 1});
+  private readonly storageFilename: string;
+  private readonly encoding = 'utf8';
+
+  constructor(storageFilename: string) {
+    this.storageFilename = storageFilename;
+
+    if (fs.existsSync(this.storageFilename)) {
+      try {
+        const sequences = JSON.parse(
+          '[' + fs.readFileSync(this.storageFilename, this.encoding) + ']'
+        );
+        this.chain.addSequences(sequences);
+      } catch (e) {
+        console.error(
+          `Error reading / parsing chatter data from ${this.storageFilename}`,
+          e
+        );
+      }
+    }
+  }
+
+  public record = (message: string) => {
+    if (message) {
+      const sequence = message.split(' ');
+      this.chain.addSequence(sequence);
+      let data = JSON.stringify(sequence);
+      if (fs.existsSync(this.storageFilename)) {
+        data = ',' + data;
+      }
+      fs.appendFileSync(this.storageFilename, data, this.encoding);
+    }
+  };
+
+  public generate = (): string =>
+    this.chain
+      .generate({
+        min: 4,
+        max: 30,
+        order: 1,
+        strict: false,
+      })
+      .join(' ');
+}
+
 export class Bot {
   private readonly client: discord.Client;
   private readonly renderer: Renderer;
   private readonly comicslate: Comicslate;
-  private readonly chatters: {[channelId: string]: MarkovChain} = {};
+  private readonly chatterDataDirectory: string;
+  private readonly chatters: {[channelId: string]: Chatter} = {};
 
-  constructor(renderer: Renderer, comicslate: Comicslate) {
+  constructor(
+    renderer: Renderer,
+    comicslate: Comicslate,
+    chatterDataDirectory: string
+  ) {
     this.renderer = renderer;
     this.comicslate = comicslate;
+    this.chatterDataDirectory = chatterDataDirectory;
+
+    if (!fs.existsSync(this.chatterDataDirectory)) {
+      mkdirp.sync(this.chatterDataDirectory);
+    }
 
     this.client = new discord.Client({
       presence: {
@@ -99,7 +158,9 @@ export class Bot {
 
   connect = (token: string): Promise<string> => this.client.login(token);
 
-  destroy = () => this.client.destroy();
+  destroy = () => {
+    this.client.destroy();
+  };
 
   private logGenericEvent =
     (eventName: string) =>
@@ -126,25 +187,18 @@ export class Bot {
       console.log(`Got a direct message from user ${message.author.username}`);
     } else if (channel instanceof discord.TextChannel) {
       if (!(message.channelId in this.chatters)) {
-        this.chatters[message.channelId] = new MarkovChain({seed: 1});
+        this.chatters[message.channelId] = new Chatter(
+          path.join(this.chatterDataDirectory, `${message.channelId}.json`)
+        );
       }
-      this.chatters[message.channelId].addSequence(
-        message.cleanContent.split(' ')
-      );
+      this.chatters[message.channelId].record(message.cleanContent);
       console.log(
         `Got a message ${message.content} [CLEAN:${message.cleanContent}] ` +
           `from user ${message.author.username} in channel ` +
           `${message.channelId} server ${message.guild?.name}`
       );
       console.log(
-        `Would reply: ${this.chatters[message.channelId]
-          .generate({
-            min: 4,
-            max: 30,
-            order: 1,
-            strict: false,
-          })
-          .join(' ')}`
+        `Would reply: ${this.chatters[message.channelId].generate()}`
       );
     }
     if (this.client.user !== null && message.mentions.has(this.client.user)) {
