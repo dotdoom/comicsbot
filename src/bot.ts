@@ -1,11 +1,11 @@
-import {MarkovChain} from 'acausal';
-import {exec} from 'child_process';
+import { MarkovChain } from 'acausal';
+import { exec } from 'child_process';
 import * as discord from 'discord.js';
 import * as fs from 'fs';
 import * as mkdirp from 'mkdirp';
 import * as path from 'path';
-import {Comicslate} from './comicslate';
-import {Renderer} from './render';
+import { Comicslate } from './comicslate';
+import { Renderer } from './render';
 
 enum Emoji {
   OK = '\u{1f44c}',
@@ -61,6 +61,14 @@ class Chatter {
         strict: false,
       })
       .join(' ');
+
+  public ready = (): boolean => {
+    const sequences = this.chain.sequences;
+    if (sequences && sequences.length > 100) {
+      return true;
+    }
+    return false;
+  };
 }
 
 export class Bot {
@@ -188,12 +196,16 @@ export class Bot {
       privateMessage = true;
       console.log(`Got a direct message from user ${message.author.username}`);
     } else if (channel instanceof discord.TextChannel) {
-      if (!(message.channelId in this.chatters)) {
-        this.chatters[message.channelId] = new Chatter(
+      let chatter: Chatter;
+      if (message.channelId in this.chatters) {
+        chatter = this.chatters[message.channelId];
+      } else {
+        chatter = new Chatter(
           path.join(this.chatterDataDirectory, `${message.channelId}.json`)
         );
+        this.chatters[message.channelId] = chatter;
       }
-      this.chatters[message.channelId].record(message.cleanContent);
+      chatter.record(message.cleanContent);
 
       if (message.content) {
         console.log(
@@ -209,9 +221,13 @@ export class Bot {
         console.log('Got a message:', message);
       }
 
-      console.log(
-        `Would reply: [${this.chatters[message.channelId].generate()}]`
-      );
+      const reply = chatter.generate();
+      if (chatter.ready() && Math.random() > 0.98) {
+        console.log(`Replied: [${reply}]`);
+        message.reply(reply);
+      } else {
+        console.log(`Would reply: [${reply}]`);
+      }
     }
 
     if (
