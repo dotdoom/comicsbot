@@ -196,6 +196,7 @@ export class Bot {
         `Got a message ${message.content} [CLEAN:${message.cleanContent}]` +
           ` | sender:${message.author.username}` +
           ` | attachments:${message.attachments.entries.length}` +
+          ` | embeds:${message.embeds.entries.length}` +
           ` | channel:${message.channelId}` +
           ` | server:${message.guild?.name}`
       );
