@@ -221,8 +221,10 @@ Renderer: \`${await this.renderer.version()}\`
 Doku: \`${await this.comicslate.doku.getVersion()}\`
 Render stats:\n\`\`\`${this.renderer.stats}\`\`\`
 `);
-        // Delete our reply 5 minutes later to keep the chat clean.
-        setTimeout(() => reply.delete(), 5 * 60 * 1000);
+        if (!(channel instanceof discord.DMChannel)) {
+          // Delete our reply 5 minutes later to keep the chat clean.
+          setTimeout(() => reply.delete(), 5 * 60 * 1000);
+        }
       });
     }
   };
