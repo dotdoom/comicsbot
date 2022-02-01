@@ -183,7 +183,9 @@ export class Bot {
     }
 
     const channel = message.channel;
+    let privateMessage = false;
     if (channel instanceof discord.DMChannel) {
+      privateMessage = true;
       console.log(`Got a direct message from user ${message.author.username}`);
     } else if (channel instanceof discord.TextChannel) {
       if (!(message.channelId in this.chatters)) {
@@ -211,7 +213,11 @@ export class Bot {
         `Would reply: [${this.chatters[message.channelId].generate()}]`
       );
     }
-    if (this.client.user !== null && message.mentions.has(this.client.user)) {
+
+    if (
+      privateMessage ||
+      (this.client.user !== null && message.mentions.has(this.client.user))
+    ) {
       message.react(Emoji.Cat);
 
       exec('git rev-parse HEAD', async (error, stdout, stderr) => {
@@ -221,7 +227,8 @@ Renderer: \`${await this.renderer.version()}\`
 Doku: \`${await this.comicslate.doku.getVersion()}\`
 Render stats:\n\`\`\`${this.renderer.stats}\`\`\`
 `);
-        if (!(channel instanceof discord.DMChannel)) {
+
+        if (!privateMessage) {
           // Delete our reply 5 minutes later to keep the chat clean.
           setTimeout(() => reply.delete(), 5 * 60 * 1000);
         }
