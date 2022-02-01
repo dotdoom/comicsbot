@@ -192,16 +192,23 @@ export class Bot {
         );
       }
       this.chatters[message.channelId].record(message.cleanContent);
+
+      if (message.content) {
+        console.log(
+          `Got a message: [${message.cleanContent}]` +
+            ` | sender:${message.author.username}` +
+            ` | attachments:${message.attachments.entries.length}` +
+            ` | embeds:${message.embeds.entries.length}` +
+            ` | stickers:${message.stickers.entries.length}` +
+            ` | channel:${message.channelId}` +
+            ` | server:${message.guild?.name}`
+        );
+      } else {
+        console.log('Got a message:', message);
+      }
+
       console.log(
-        `Got a message ${message.content} [CLEAN:${message.cleanContent}]` +
-          ` | sender:${message.author.username}` +
-          ` | attachments:${message.attachments.entries.length}` +
-          ` | embeds:${message.embeds.entries.length}` +
-          ` | channel:${message.channelId}` +
-          ` | server:${message.guild?.name}`
-      );
-      console.log(
-        `Would reply: ${this.chatters[message.channelId].generate()}`
+        `Would reply: [${this.chatters[message.channelId].generate()}]`
       );
     }
     if (this.client.user !== null && message.mentions.has(this.client.user)) {
