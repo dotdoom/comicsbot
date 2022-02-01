@@ -42,7 +42,7 @@ class Chatter {
 
   public record = (message: string) => {
     if (message) {
-      const sequence = message.split(' ');
+      const sequence = message.split(/\s+/);
       this.chain.addSequence(sequence);
       let data = JSON.stringify(sequence);
       if (fs.existsSync(this.storageFilename)) {
