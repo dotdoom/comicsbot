@@ -1,11 +1,11 @@
-import { MarkovChain } from 'acausal';
-import { exec } from 'child_process';
+import {MarkovChain} from 'acausal';
+import {exec} from 'child_process';
 import * as discord from 'discord.js';
 import * as fs from 'fs';
 import * as mkdirp from 'mkdirp';
 import * as path from 'path';
-import { Comicslate } from './comicslate';
-import { Renderer } from './render';
+import {Comicslate} from './comicslate';
+import {Renderer} from './render';
 
 enum Emoji {
   OK = '\u{1f44c}',
@@ -42,13 +42,17 @@ class Chatter {
 
   public record = (message: string) => {
     if (message) {
-      const sequence = message.split(/\s+/);
-      this.chain.addSequence(sequence);
-      let data = JSON.stringify(sequence);
-      if (fs.existsSync(this.storageFilename)) {
-        data = ',' + data;
+      const sequence = message
+        .split(/\s+/)
+        .filter(item => !item.startsWith('http'));
+      if (sequence) {
+        this.chain.addSequence(sequence);
+        let data = JSON.stringify(sequence);
+        if (fs.existsSync(this.storageFilename)) {
+          data = ',' + data;
+        }
+        fs.appendFileSync(this.storageFilename, data, this.encoding);
       }
-      fs.appendFileSync(this.storageFilename, data, this.encoding);
     }
   };
 
