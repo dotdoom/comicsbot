@@ -45,7 +45,7 @@ class Chatter {
       const sequence = message
         .split(/\s+/)
         .filter(item => !item.startsWith('http'));
-      if (sequence) {
+      if (sequence.length > 0) {
         this.chain.addSequence(sequence);
         let data = JSON.stringify(sequence);
         if (fs.existsSync(this.storageFilename)) {
