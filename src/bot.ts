@@ -21,6 +21,7 @@ class Chatter {
   private readonly chain: MarkovChain = new MarkovChain({seed: 1});
   private readonly storageFilename: string;
   private readonly encoding = 'utf8';
+  private replyTimer?: ReturnType<typeof setTimeout>;
 
   constructor(storageFilename: string) {
     this.storageFilename = storageFilename;
@@ -40,38 +41,43 @@ class Chatter {
     }
   }
 
-  public record = (message: string) => {
-    if (message) {
-      const sequence = message
-        .split(/\s+/)
-        .filter(item => !item.startsWith('http'));
-      if (sequence.length > 0) {
-        this.chain.addSequence(sequence);
-        let data = JSON.stringify(sequence);
-        if (fs.existsSync(this.storageFilename)) {
-          data = ',' + data;
-        }
-        fs.appendFileSync(this.storageFilename, data, this.encoding);
+  public record = (message: string, replier: (message: string) => void) => {
+    if (this.replyTimer) {
+      clearTimeout(this.replyTimer);
+      this.replyTimer = undefined;
+    }
+
+    if ((this.chain.sequences?.length || 0) > 50 && Math.random() > 0.7) {
+      const response = this.chain
+        .generate({
+          min: 4,
+          max: 30,
+          order: 1,
+          strict: false,
+        })
+        .join(' ');
+      this.replyTimer = setTimeout(() => {
+        this.replyTimer = undefined;
+        console.log(`Replying: [${response}]`);
+        replier(response);
+      }, 2_000_000);
+    }
+
+    if (!message) {
+      return;
+    }
+
+    const sequence = message
+      .split(/\s+/)
+      .filter(item => !item.startsWith('http'));
+    if (sequence.length > 0) {
+      this.chain.addSequence(sequence);
+      let data = JSON.stringify(sequence);
+      if (fs.existsSync(this.storageFilename)) {
+        data = ',' + data;
       }
+      fs.appendFileSync(this.storageFilename, data, this.encoding);
     }
-  };
-
-  public generate = (): string =>
-    this.chain
-      .generate({
-        min: 4,
-        max: 30,
-        order: 1,
-        strict: false,
-      })
-      .join(' ');
-
-  public ready = (): boolean => {
-    const sequences = this.chain.sequences;
-    if (sequences && sequences.length > 100) {
-      return true;
-    }
-    return false;
   };
 }
 
@@ -209,7 +215,7 @@ export class Bot {
         );
         this.chatters[message.channelId] = chatter;
       }
-      chatter.record(message.cleanContent);
+      chatter.record(message.cleanContent, response => message.reply(response));
 
       if (message.content) {
         console.log(
@@ -223,14 +229,6 @@ export class Bot {
         );
       } else {
         console.log('Got a message:', message);
-      }
-
-      const reply = chatter.generate();
-      if (chatter.ready() && Math.random() > 0.98) {
-        console.log(`Replied: [${reply}]`);
-        message.reply(reply);
-      } else {
-        console.log(`Would reply: [${reply}]`);
       }
     }
 
