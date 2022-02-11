@@ -16,6 +16,7 @@ interface Config {
   discord: {
     token: string;
     chatterDataDirectory: string;
+    chatterEnabled: boolean;
   };
   doku: {
     user: string;
@@ -131,7 +132,8 @@ interface Config {
     const bot = new Bot(
       render,
       comicslate,
-      config.discord.chatterDataDirectory
+      config.discord.chatterDataDirectory,
+      config.discord.chatterEnabled
     );
     bot.connect(config.discord.token);
     onExit(() => bot.destroy());

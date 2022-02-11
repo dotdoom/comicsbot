@@ -1,7 +1,8 @@
 {
   "discord": {
     "token": "abcd.1234",
-    "chatterDataDirectory": "/var/www/comicslate.org/chat"
+    "chatterDataDirectory": "/var/www/comicslate.org/chat",
+    "chatterEnabled": true
   },
   "doku": {
     "user": "dokubot",

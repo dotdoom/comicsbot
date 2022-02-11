@@ -41,7 +41,7 @@ class Chatter {
     }
   }
 
-  public record = (message: string, replier: (message: string) => void) => {
+  public record = (message: string, replier?: (message: string) => void) => {
     if (this.replyTimer) {
       clearTimeout(this.replyTimer);
       this.replyTimer = undefined;
@@ -56,11 +56,13 @@ class Chatter {
           strict: false,
         })
         .join(' ');
-      this.replyTimer = setTimeout(() => {
-        this.replyTimer = undefined;
-        console.log(`Replying: [${response}]`);
-        replier(response);
-      }, 2_000_000);
+      if (replier) {
+        this.replyTimer = setTimeout(() => {
+          this.replyTimer = undefined;
+          console.log(`Replying: [${response}]`);
+          replier(response);
+        }, 2_000_000);
+      }
     }
 
     if (!message) {
@@ -86,16 +88,19 @@ export class Bot {
   private readonly renderer: Renderer;
   private readonly comicslate: Comicslate;
   private readonly chatterDataDirectory: string;
+  private readonly chatterEnabled: boolean;
   private readonly chatters: {[channelId: string]: Chatter} = {};
 
   constructor(
     renderer: Renderer,
     comicslate: Comicslate,
-    chatterDataDirectory: string
+    chatterDataDirectory: string,
+    chatterEnabled: boolean
   ) {
     this.renderer = renderer;
     this.comicslate = comicslate;
     this.chatterDataDirectory = chatterDataDirectory;
+    this.chatterEnabled = chatterEnabled;
 
     if (!fs.existsSync(this.chatterDataDirectory)) {
       mkdirp.sync(this.chatterDataDirectory);
@@ -215,7 +220,10 @@ export class Bot {
         );
         this.chatters[message.channelId] = chatter;
       }
-      chatter.record(message.cleanContent, response => message.reply(response));
+      chatter.record(
+        message.cleanContent,
+        this.chatterEnabled ? response => message.reply(response) : undefined
+      );
 
       if (message.content) {
         console.log(
