@@ -21,9 +21,7 @@ export function onExit(callback: () => Promise<void> | void) {
       }
     });
   }
-  process.on('uncaughtException', () => {
-    // https://nodejs.org/api/process.html#process_event_uncaughtexception
-    process.exitCode = 1;
+  process.on('uncaughtExceptionMonitor', () => {
     callbackOnce();
   });
 }
