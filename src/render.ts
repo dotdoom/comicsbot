@@ -46,7 +46,7 @@ export class RendererStats {
     if (this.inFlightRenders.length > 0) {
       summary +=
         ` and ${this.inFlightRenders.length} are still in-flight` +
-        `: ${this.inFlightRenders.slice(3)}`;
+        `: ${this.inFlightRenders.slice(0, 3)}`;
     }
     return summary;
   };
