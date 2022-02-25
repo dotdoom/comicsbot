@@ -159,38 +159,32 @@ export class Comicslate {
   };
 
   private validateAllComics = async () => {
-    const validations: Promise<any>[] = [];
     let numberOfValidComics = 0;
 
     for (const language in this.comicsCache) {
       for (const comic of this.comicsCache[language]) {
-        validations.push(
-          (async () => {
-            const firstStripId = new PageId(language, comic.id);
-            try {
-              const strips = await this.getStrips(language, comic.id);
-              if (!strips.storyStrips.length) {
-                throw 'Empty list of story strips';
-              }
-              firstStripId.stripId = strips.storyStrips[0];
-              await this.renderStrip(
-                await this.doku.getPageInfo(firstStripId.toString())
-              );
-              comic.firstStripRenders = true;
-              numberOfValidComics += 1;
-            } catch (e) {
-              console.error(
-                `Failed to render the 1st story strip (${firstStripId}):`,
-                e
-              );
-              comic.firstStripRenders = false;
-            }
-          })()
-        );
+        const firstStripId = new PageId(language, comic.id);
+        try {
+          const strips = await this.getStrips(language, comic.id);
+          if (!strips.storyStrips.length) {
+            throw 'Empty list of story strips';
+          }
+          firstStripId.stripId = strips.storyStrips[0];
+          await this.renderStrip(
+            await this.doku.getPageInfo(firstStripId.toString())
+          );
+          comic.firstStripRenders = true;
+          numberOfValidComics += 1;
+        } catch (e) {
+          console.error(
+            `Failed to render the 1st story strip (${firstStripId}):`,
+            e
+          );
+          comic.firstStripRenders = false;
+        }
       }
     }
 
-    await Promise.all(validations);
     return numberOfValidComics;
   };
 
