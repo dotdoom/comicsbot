@@ -2,9 +2,11 @@ import * as url from 'url';
 import * as xmlrpc from 'xmlrpc';
 
 // Fix for https://github.com/baalexander/node-xmlrpc/issues/152.
-((xmlrpc.dateFormatter.constructor as unknown) as {
-  ISO8601: RegExp;
-}).ISO8601 = new RegExp(
+(
+  xmlrpc.dateFormatter.constructor as unknown as {
+    ISO8601: RegExp;
+  }
+).ISO8601 = new RegExp(
   '([0-9]{4})([-]?([0-9]{2}))([-]?([0-9]{2}))' +
     '(T([0-9]{2})(((:?([0-9]{2}))?((:?([0-9]{2}))?([.]([0-9]+))?))?)' +
     '(Z|([+-]([0-9]{2}(:?([0-9]{2}))?)))?)?'
@@ -71,16 +73,18 @@ export class Doku {
     (await this.methodCall('dokuwiki.getVersion', [])) as string;
 
   getPagelist = async (namespace: string, options?: SearchAllPagesOptions) =>
-    ((await this.methodCall('dokuwiki.getPagelist', [
-      namespace,
-      options,
-    ])) as Array<{
-      id: string;
-      rev: number;
-      mtime: number;
-      size: number;
-      hash?: string;
-    }>).map(page => {
+    (
+      (await this.methodCall('dokuwiki.getPagelist', [
+        namespace,
+        options,
+      ])) as Array<{
+        id: string;
+        rev: number;
+        mtime: number;
+        size: number;
+        hash?: string;
+      }>
+    ).map(page => {
       return {
         id: page.id,
         rev: page.rev,
