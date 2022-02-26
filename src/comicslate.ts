@@ -55,7 +55,7 @@ export class PageId {
 export class Comicslate {
   readonly initialized: Promise<void>;
   readonly doku: doku.Doku;
-  private readonly render: Renderer;
+  readonly render: Renderer;
   private readonly baseUrl: URL;
   private readonly cachePage: string;
   private readonly acceptComic: (path: string) => boolean;

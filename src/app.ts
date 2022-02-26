@@ -168,6 +168,8 @@ export class App {
             return this.getUpdates(res.locals.language, req.params.snapshot);
         }));*/
 
+      .get('/stats', jsonApi(this.renderStats))
+
       // This express.use() call must always go last.
       .use(errorHandler);
   }
@@ -395,6 +397,15 @@ export class App {
       author_url: this.comicslate.pageURL(`user:${strip.author}`),
       provider_name: `${comic.categoryName} | ${comic.name}`,
       provider_url: comic.homePageURL,
+    };
+  };
+
+  private renderStats: RequestHandler = async (req, res) => {
+    return {
+      renderer: {
+        version: await this.comicslate.render.version(),
+        stats: this.comicslate.render.stats.toString(),
+      },
     };
   };
 }

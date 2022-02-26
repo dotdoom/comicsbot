@@ -3,7 +3,6 @@ import * as se from 'sightengine';
 import {URL} from 'url';
 import * as xmlrpc from 'xmlrpc';
 import {App} from './app';
-import {Bot} from './bot';
 import {Comicslate} from './comicslate';
 import {Doku} from './doku';
 import {onExit} from './on_exit';
@@ -13,11 +12,6 @@ import {Renderer} from './render';
 process.title = 'comicsbot';
 
 interface Config {
-  discord?: {
-    token: string;
-    chatterDataDirectory: string;
-    chatterEnabled: boolean;
-  };
   doku: {
     user: string;
     password: string;
@@ -126,18 +120,6 @@ interface Config {
   console.log('Starting API server...');
   const app = new App(comicslate, sightengine);
   app.express.listen(config.app.port);
-
-  if (config.discord) {
-    console.log('Starting Discord bot...');
-    const bot = new Bot(
-      render,
-      comicslate,
-      config.discord.chatterDataDirectory,
-      config.discord.chatterEnabled
-    );
-    bot.connect(config.discord.token);
-    onExit(() => bot.destroy());
-  }
 
   console.log('Started!');
 })().catch(e => {
