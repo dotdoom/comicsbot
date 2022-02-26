@@ -13,7 +13,7 @@ import {Renderer} from './render';
 process.title = 'comicsbot';
 
 interface Config {
-  discord: {
+  discord?: {
     token: string;
     chatterDataDirectory: string;
     chatterEnabled: boolean;
