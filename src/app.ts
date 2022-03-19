@@ -115,12 +115,6 @@ export class App {
         express.json(),
         clientLanguage(this.comicslate)
       )
-      .get('/', (req, res) =>
-        res.redirect(
-          'https://play.google.com/' +
-            'store/apps/details?id=org.dasfoo.comicslate'
-        )
-      )
       .get(
         '/comics',
         jsonApi(async (req, res) =>
