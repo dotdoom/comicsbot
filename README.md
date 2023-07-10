@@ -4,36 +4,17 @@
 
 ## Description
 
-Bot for DokuWiki, mainly website http://comicslate.org.
+Rendering script for DokuWiki (mainly http://comicslate.org) to render a subset
+of pages.
 
-Rendering script for DokuWiki to render a subset of pages.
+## Installation
 
-## Requirements
+1. Copy `config/config.example.json` to `config/config.json` and edit it
 
-NodeJS 8.0.0.
+2. `nvm use`
 
-## Install
+3. `npm ci`
 
-Copy config.example.json to config.json and edit.
+4. `npm run start`
 
-Invitation link:
-
-https://discordapp.com/api/oauth2/authorize?client_id=541646051270983683&permissions=523330&scope=bot
-
-(all text permission + Kick + View Channels)
-
-## Details
-
-### State
-
-### Features
-
-* tr
-
-* extract `<title>`
-
-* latest changes
-
-## TODO
-
-* add tests
+5. Navigate to `http://localhost:8081/comics/sci-fi:freefall/strips/0001/render`
