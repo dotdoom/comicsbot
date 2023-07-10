@@ -1,11 +1,10 @@
 import * as acceptLanguage from 'accept-language-parser';
 import * as express from 'express';
-import {Application, RequestHandler} from 'express';
-import * as fs from 'fs';
+import { Application, RequestHandler } from 'express';
 import * as moment from 'moment';
 import * as morgan from 'morgan';
-import {Comicslate, PageId} from './comicslate';
-import {Renderer} from './render';
+import { Comicslate, PageId } from './comicslate';
+import { Renderer } from './render';
 
 const clientLanguage = (comicslate: Comicslate): RequestHandler => {
   const serverPreference: {[language: string]: number} = {};
@@ -101,11 +100,9 @@ const errorHandler: express.ErrorRequestHandler = (err, req, res, next) => {
 export class App {
   readonly express: Application;
   private readonly comicslate: Comicslate;
-  private readonly sightengine: any;
 
-  constructor(comicslate: Comicslate, sightengine: any) {
+  constructor(comicslate: Comicslate) {
     this.comicslate = comicslate;
-    this.sightengine = sightengine;
     this.express = express()
       // We should be running behind a reverse proxy, trust the XFF header.
       .enable('trust proxy')
@@ -271,67 +268,6 @@ export class App {
       pageInfo,
       !req.query.refresh
     );
-
-    if (this.sightengine) {
-      const safetyCache = stripFilename.replace(/[.][^./]+$/, '_safety.json');
-      if (fs.existsSync(safetyCache)) {
-        console.log(`Already checked for safety: see ${safetyCache}.`);
-      } else {
-        try {
-          const safety = (await this.sightengine
-            .check(['nudity', 'wad', 'offensive', 'text-content'])
-            .set_file(stripFilename)) as {
-            status: string;
-            request: {
-              id: string;
-              timestamp: number;
-              operations: number;
-            };
-            error?: {
-              type: string;
-              code: number;
-              message: string;
-            };
-            media: any;
-            // 'nudity' results.
-            nudity?: {
-              raw: number;
-              partial: number;
-              partial_tag?: string;
-              safe: number;
-            };
-            // 'wad' results
-            weapon?: number;
-            alcohol?: number;
-            drugs?: number;
-            // 'offensive' results
-            offensive?: {
-              prob: number;
-              boxes?: any;
-            };
-            // 'text-content' results
-            text?: {
-              profanity: any;
-              personal: any;
-              link: any;
-              ignored_text: boolean;
-            };
-          };
-          if (safety.status === 'success') {
-            fs.writeFileSync(safetyCache, JSON.stringify(safety));
-          } else {
-            if (safety.error?.type === 'usage_limit') {
-              console.warn('Usage limit achieved on safety API.');
-            } else {
-              console.log(safety);
-            }
-          }
-        } catch (e) {
-          console.warn(`Could not request safety into ${safetyCache}:`);
-          console.error(e);
-        }
-      }
-    }
 
     this.sendFile(res, stripFilename, next, false);
   };

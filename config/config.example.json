@@ -8,11 +8,10 @@
   "app": {
     "port": 8081,
     "cachePage": "user:dokubot:cache",
-    "bannedComicRegex": ["living.*with.*girl", "simpson"],
-    "sightengine": {
-      "user": "abc123",
-      "secret": "321cba"
-    }
+    "bannedComicRegex": [
+      "living.*with.*girl",
+      "simpson"
+    ]
   },
   "render": {
     "baseDirectory": "/var/www/comicslate.org/data/media/u",

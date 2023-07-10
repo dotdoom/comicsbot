@@ -2,7 +2,7 @@ import * as mkdirp from 'mkdirp';
 import * as path from 'path';
 import * as puppeteer from 'puppeteer';
 import * as sharp from 'sharp';
-import {URL} from 'url';
+import { URL } from 'url';
 
 interface RenderOptions {
   findRect(id: string): DOMRect;
@@ -107,6 +107,7 @@ export class Renderer {
         //await browserPage.setCookie(...this.doku.getCookies());
         await browserPage.goto(url.href, {waitUntil: 'networkidle0'});
 
+        // @ts-ignore - doc / examples insist that this should work.
         const clip = (await browserPage.evaluate(render.findRect)) as DOMRect;
         const clipDebugString = `rect[${clip.left}, ${clip.top}; ${clip.right}, ${clip.bottom}]`;
         const renderFilename = this.renderFilename(url, baseDirectory);

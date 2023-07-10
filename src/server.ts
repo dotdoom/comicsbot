@@ -1,12 +1,11 @@
 import * as puppeteer from 'puppeteer';
-import * as se from 'sightengine';
-import {URL} from 'url';
+import { URL } from 'url';
 import * as xmlrpc from 'xmlrpc';
-import {App} from './app';
-import {Comicslate} from './comicslate';
-import {Doku} from './doku';
-import {onExit} from './on_exit';
-import {Renderer} from './render';
+import { App } from './app';
+import { Comicslate } from './comicslate';
+import { Doku } from './doku';
+import { onExit } from './on_exit';
+import { Renderer } from './render';
 
 // Used by our .service initfile to find the bot process.
 process.title = 'comicsbot';
@@ -22,10 +21,6 @@ interface Config {
     port: number;
     cachePage: string;
     bannedComicRegex?: string[];
-    sightengine?: {
-      user: string;
-      secret: string;
-    };
   };
   render: {
     baseDirectory: string;
@@ -110,15 +105,11 @@ interface Config {
     config.app.bannedComicRegex
   );
 
-  const sightengine = config.app.sightengine
-    ? se(config.app.sightengine.user, config.app.sightengine.secret)
-    : null;
-
   console.log('Initializing Wiki...');
   await comicslate.initialized;
 
   console.log('Starting API server...');
-  const app = new App(comicslate, sightengine);
+  const app = new App(comicslate);
   app.express.listen(config.app.port);
 
   console.log('Started!');
