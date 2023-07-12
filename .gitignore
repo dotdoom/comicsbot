@@ -5,3 +5,6 @@ node_modules
 
 # Server deployment configuration.
 /.npm
+
+# Browser binaries.
+/.cache
