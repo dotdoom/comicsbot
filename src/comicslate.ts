@@ -121,41 +121,45 @@ export class Comicslate {
     }
 
     console.info('Scanning all comics...');
-    const rootPages = (await this.doku.getPagelist('', {depth: 2})).sort(
-      (a, b) => a.id.localeCompare(b.id)
-    );
-    for (const page of rootPages) {
-      if (page.id.endsWith(Comicslate.menuPage)) {
-        const language = page.id.slice(0, -Comicslate.menuPage.length);
-        console.log(`- Language ${language}...`);
+    try {
+      const rootPages = (await this.doku.getPagelist('', {depth: 2})).sort(
+        (a, b) => a.id.localeCompare(b.id)
+      );
+      for (const page of rootPages) {
+        if (page.id.endsWith(Comicslate.menuPage)) {
+          const language = page.id.slice(0, -Comicslate.menuPage.length);
+          console.log(`- Language ${language}...`);
 
-        const comics = await this.fetchComicsForLanguage(language);
-        if (
-          language in this.comicsCache &&
-          this.comicsCache[language].length / 2 > comics.length
-        ) {
-          console.error(
-            '-- Existing cache is sufficiently larger than the newly ' +
-              'fetched value, discarding new value ' +
-              `(${this.comicsCache[language].length} >> ${comics.length})`
-          );
-        } else {
-          this.comicsCache[language] = comics;
-          console.log(`-- Loaded ${comics.length} comics`);
+          const comics = await this.fetchComicsForLanguage(language);
+          if (
+            language in this.comicsCache &&
+            this.comicsCache[language].length / 2 > comics.length
+          ) {
+            console.error(
+              '-- Existing cache is sufficiently larger than the newly ' +
+                'fetched value, discarding new value ' +
+                `(${this.comicsCache[language].length} >> ${comics.length})`
+            );
+          } else {
+            this.comicsCache[language] = comics;
+            console.log(`-- Loaded ${comics.length} comics`);
+          }
         }
       }
-    }
 
-    const numberOfValidComics = await this.validateAllComics();
-    console.info(
-      `Comics validated (valid: ${numberOfValidComics}), saving cache`
-    );
-    // Don't wait for the write to finish and return ASAP.
-    this.doku.putPage(
-      this.cachePage,
-      `<code>${JSON.stringify(this.comicsCache, null, 2)}</code>`,
-      `${numberOfValidComics} valid comics`
-    );
+      const numberOfValidComics = await this.validateAllComics();
+      console.info(
+        `Comics validated (valid: ${numberOfValidComics}), saving cache`
+      );
+      // Wait for the write to finish to avoid uncaught (=fatal) errors.
+      await this.doku.putPage(
+        this.cachePage,
+        `<code>${JSON.stringify(this.comicsCache, null, 2)}</code>`,
+        `${numberOfValidComics} valid comics`
+      );
+    } catch (e) {
+      console.error(`Comics could not be validated / cache save failure`, e);
+    }
   };
 
   private validateAllComics = async () => {
