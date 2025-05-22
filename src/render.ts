@@ -2,7 +2,7 @@ import * as mkdirp from 'mkdirp';
 import * as path from 'path';
 import * as puppeteer from 'puppeteer';
 import * as sharp from 'sharp';
-import { URL } from 'url';
+import {URL} from 'url';
 
 interface RenderOptions {
   findRect(id: string): DOMRect;
@@ -17,7 +17,7 @@ export class RendererStats {
 
   public recordRender = async (
     url: URL,
-    render: () => Promise<any>
+    render: () => Promise<any>,
   ): Promise<string> => {
     ++this.numRenderRequests;
     this.inFlightRenders.push(url);
@@ -66,7 +66,7 @@ export class Renderer {
     renderOptionsFile: string,
     browser: puppeteer.Browser | null,
     baseDirectory: string,
-    deviceScaleFactor?: number
+    deviceScaleFactor?: number,
   ) {
     this.renderOptionsFile = renderOptionsFile;
     this.browser = browser;
@@ -79,7 +79,7 @@ export class Renderer {
 
   renderSinglePage = (
     url: URL,
-    baseDirectory: string = this.baseDirectory
+    baseDirectory: string = this.baseDirectory,
   ): Promise<string> =>
     this.stats.recordRender(url, async (): Promise<string> => {
       if (this.browser == null) {
@@ -112,7 +112,7 @@ export class Renderer {
         const clipDebugString = `rect[${clip.left}, ${clip.top}; ${clip.right}, ${clip.bottom}]`;
         const renderFilename = this.renderFilename(url, baseDirectory);
         console.info(
-          `rendering page ${url} ${clipDebugString} into ` + renderFilename
+          `rendering page ${url} ${clipDebugString} into ` + renderFilename,
         );
         const pngBuffer = (await browserPage.screenshot({
           clip: clip,
@@ -142,7 +142,7 @@ export class Renderer {
     let fileName = url.pathname.replace(/:/g, '/').replace(/[.]/g, '__dot__');
     if (url.searchParams.has(Renderer.versionParameterName)) {
       const rev = parseInt(
-        url.searchParams.get(Renderer.versionParameterName)!
+        url.searchParams.get(Renderer.versionParameterName)!,
       );
       if (isFinite(rev)) {
         fileName += `@${rev}`;

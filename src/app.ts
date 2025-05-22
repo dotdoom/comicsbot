@@ -1,10 +1,10 @@
 import * as acceptLanguage from 'accept-language-parser';
 import * as express from 'express';
-import { Application, RequestHandler } from 'express';
+import {Application, RequestHandler} from 'express';
 import * as moment from 'moment';
 import * as morgan from 'morgan';
-import { Comicslate, PageId } from './comicslate';
-import { Renderer } from './render';
+import {Comicslate, PageId} from './comicslate';
+import {Renderer} from './render';
 
 const clientLanguage = (comicslate: Comicslate): RequestHandler => {
   const serverPreference: {[language: string]: number} = {};
@@ -40,11 +40,11 @@ const clientLanguage = (comicslate: Comicslate): RequestHandler => {
       }
       console.info(
         `For ${acceptLanguageHeader} picked ` +
-          `${res.locals.language};q=${maxQuality}`
+          `${res.locals.language};q=${maxQuality}`,
       );
     } else {
       console.info(
-        `Automatically picked ${res.locals.language} due to missing header`
+        `Automatically picked ${res.locals.language} due to missing header`,
       );
     }
 
@@ -91,7 +91,7 @@ const errorHandler: express.ErrorRequestHandler = (err, req, res, next) => {
     res.locals,
     '>\nError:  <',
     err,
-    '>\n------'
+    '>\n------',
   );
 
   res.status(503).json(err.toString());
@@ -110,19 +110,19 @@ export class App {
         morgan('combined'),
         express.urlencoded({extended: true}),
         express.json(),
-        clientLanguage(this.comicslate)
+        clientLanguage(this.comicslate),
       )
       .get(
         '/comics',
         jsonApi(async (req, res) =>
-          this.comicslate.getComics(res.locals.language)
-        )
+          this.comicslate.getComics(res.locals.language),
+        ),
       )
       .get(
         '/comics/:comicId/strips',
         jsonApi((req, res) =>
-          this.comicslate.getStrips(res.locals.language, req.params.comicId)
-        )
+          this.comicslate.getStrips(res.locals.language, req.params.comicId),
+        ),
       )
       .get(
         '/comics/:comicId/strips/:stripId',
@@ -136,11 +136,11 @@ export class App {
               new PageId(
                 res.locals.language,
                 req.params.comicId,
-                req.params.stripId
-              )
+                req.params.stripId,
+              ),
             );
           }
-        })
+        }),
       )
       .get('/comics/:comicId/strips/:stripId/render', jsonApi(this.renderStrip))
       /* For this to work, there has to be HTML markup similar to:
@@ -213,16 +213,16 @@ export class App {
 
   private getStrip: RequestHandler = async (req, res, next) => {
     const strip = await this.comicslate.getStrip(
-      new PageId(res.locals.language, req.params.comicId, req.params.stripId)
+      new PageId(res.locals.language, req.params.comicId, req.params.stripId),
     );
     res.setHeader(
       'X-Comicslate-Strip',
-      Buffer.from(JSON.stringify(strip)).toString('base64')
+      Buffer.from(JSON.stringify(strip)).toString('base64'),
     );
 
     const stripFilename = await this.comicslate.renderStrip(
       strip,
-      !req.query.refresh
+      !req.query.refresh,
     );
 
     this.sendFile(res, stripFilename, next, false);
@@ -232,7 +232,7 @@ export class App {
     res: express.Response<any>,
     path: string,
     next: express.NextFunction,
-    immutable: boolean
+    immutable: boolean,
   ): void => {
     // sendFile is smart:
     // - it adds Content-Type automatically
@@ -253,7 +253,7 @@ export class App {
         } else {
           console.log(`Sent file ${path}`);
         }
-      }
+      },
     );
   };
 
@@ -266,7 +266,7 @@ export class App {
     const pageInfo = await this.comicslate.doku.getPageInfo(pageId);
     const stripFilename = await this.comicslate.renderStrip(
       pageInfo,
-      !req.query.refresh
+      !req.query.refresh,
     );
 
     this.sendFile(res, stripFilename, next, false);
@@ -274,12 +274,12 @@ export class App {
 
   private embedImage: RequestHandler = async (req, res, next) => {
     const extraQueryParams = Object.keys(req.query).filter(
-      param => !['id', Renderer.versionParameterName].includes(param)
+      param => !['id', Renderer.versionParameterName].includes(param),
     );
     if (extraQueryParams.length > 0) {
       console.error(`Extra query parameters: ${extraQueryParams}.`);
       res.redirect(
-        'https://upload.wikimedia.org/wikipedia/commons/1/14/Rubber_Duck_(8374802487).jpg'
+        'https://upload.wikimedia.org/wikipedia/commons/1/14/Rubber_Duck_(8374802487).jpg',
       );
       return;
     }
@@ -287,14 +287,14 @@ export class App {
     // TODO(dotdoom): handle links to comics / user page / strip / unknown.
     const pageInfo = await this.comicslate.doku.getPageInfo(
       req.query.id as string,
-      parseInt(req.query[Renderer.versionParameterName] as string)
+      parseInt(req.query[Renderer.versionParameterName] as string),
     );
     this.sendFile(
       res,
       await this.comicslate.renderStrip(pageInfo),
       next,
       // Enable cache when version parameter is specified.
-      !!req.query[Renderer.versionParameterName]
+      !!req.query[Renderer.versionParameterName],
     );
   };
 
@@ -313,7 +313,7 @@ export class App {
     const strip = await this.comicslate.getStrip(page, version);
     const comic = (await this.comicslate.getComic(
       page.language,
-      page.comicId
+      page.comicId,
     ))!;
 
     return {

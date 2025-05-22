@@ -70,7 +70,7 @@ export class Comicslate {
     render: Renderer,
     baseUrl: URL,
     cachePage: string,
-    bannedComicRegex?: string[]
+    bannedComicRegex?: string[],
   ) {
     this.doku = doku;
     this.baseUrl = baseUrl;
@@ -79,7 +79,7 @@ export class Comicslate {
 
     if (bannedComicRegex) {
       const bannedComicRegexCompiled = bannedComicRegex.map(r =>
-        RegExp(r, 'is')
+        RegExp(r, 'is'),
       );
       this.acceptComic = path =>
         !bannedComicRegexCompiled.some(r => r.test(path));
@@ -97,8 +97,8 @@ export class Comicslate {
         this.comicsCache = JSON.parse(
           (await this.doku.getPage(this.cachePage)).replace(
             /^<code>|<[/]code>$/g,
-            ''
-          )
+            '',
+          ),
         );
 
         let numberOfComics = 0;
@@ -115,7 +115,7 @@ export class Comicslate {
         this.comicsCache = {};
         console.error(
           `Error loading comics cache from page ${this.cachePage}`,
-          e
+          e,
         );
       }
     }
@@ -123,7 +123,7 @@ export class Comicslate {
     console.info('Scanning all comics...');
     try {
       const rootPages = (await this.doku.getPagelist('', {depth: 2})).sort(
-        (a, b) => a.id.localeCompare(b.id)
+        (a, b) => a.id.localeCompare(b.id),
       );
       for (const page of rootPages) {
         if (page.id.endsWith(Comicslate.menuPage)) {
@@ -138,7 +138,7 @@ export class Comicslate {
             console.error(
               '-- Existing cache is sufficiently larger than the newly ' +
                 'fetched value, discarding new value ' +
-                `(${this.comicsCache[language].length} >> ${comics.length})`
+                `(${this.comicsCache[language].length} >> ${comics.length})`,
             );
           } else {
             this.comicsCache[language] = comics;
@@ -149,13 +149,13 @@ export class Comicslate {
 
       const numberOfValidComics = await this.validateAllComics();
       console.info(
-        `Comics validated (valid: ${numberOfValidComics}), saving cache`
+        `Comics validated (valid: ${numberOfValidComics}), saving cache`,
       );
       // Wait for the write to finish to avoid uncaught (=fatal) errors.
       await this.doku.putPage(
         this.cachePage,
         `<code>${JSON.stringify(this.comicsCache, null, 2)}</code>`,
-        `${numberOfValidComics} valid comics`
+        `${numberOfValidComics} valid comics`,
       );
     } catch (e) {
       console.error(`Comics could not be validated / cache save failure`, e);
@@ -175,7 +175,7 @@ export class Comicslate {
           }
           firstStripId.stripId = strips.storyStrips[0];
           await this.renderStrip(
-            await this.doku.getPageInfo(firstStripId.toString())
+            await this.doku.getPageInfo(firstStripId.toString()),
           );
           comic.firstStripRenders = true;
           numberOfValidComics += 1;
@@ -194,7 +194,7 @@ export class Comicslate {
 
   getStrips = async (
     language: string,
-    comicId: string
+    comicId: string,
   ): Promise<ComicStrips> => {
     const comicIdPrefix = [language, comicId].join(':');
     return {
@@ -226,7 +226,7 @@ export class Comicslate {
 
   renderStrip = async (
     page: doku.PageInfo,
-    allowCache = true
+    allowCache = true,
   ): Promise<string> => {
     const pageUrl = this.pageURL(page.name, true, page.version);
 
@@ -257,7 +257,7 @@ export class Comicslate {
     language: string,
     menuEntry: string,
     categoryName: string | undefined,
-    ratings: ComicRating[]
+    ratings: ComicRating[],
   ): Promise<Comic[]> => {
     if (!this.acceptComic(menuEntry)) {
       console.warn(`Comic '${menuEntry}' has not been accepted, skipping.`);
@@ -290,7 +290,7 @@ export class Comicslate {
     const imageMatch = indexPage.match(/{{([^}]+[.](png|jpe?g)[^|}]+)[^}]*}}/);
     if (imageMatch) {
       comicTemplate.thumbnailURL = this.pageURL(
-        ['_media', comicTemplate.id, imageMatch[1].trim()].join('/')
+        ['_media', comicTemplate.id, imageMatch[1].trim()].join('/'),
       );
     }
 
@@ -372,7 +372,7 @@ export class Comicslate {
   };
 
   private fetchComicsForLanguage = async (
-    language: string
+    language: string,
   ): Promise<Comic[]> => {
     const menu = (
       await this.doku.getPage(language + Comicslate.menuPage)
@@ -399,8 +399,8 @@ export class Comicslate {
             language,
             match[1],
             categoryName,
-            ratings.map(r => this.parseComicRating(r))
-          )
+            ratings.map(r => this.parseComicRating(r)),
+          ),
         );
       }
     }
