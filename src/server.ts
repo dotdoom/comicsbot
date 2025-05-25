@@ -24,6 +24,7 @@ interface Config {
   };
   render: {
     baseDirectory: string;
+    cacheDirectory?: string;
     deviceScaleFactor?: number;
   };
 }
@@ -33,26 +34,32 @@ interface Config {
   const baseUrl = new URL(config.doku.baseUrl);
 
   console.log('Starting browser...');
-  const browser_args = [
-    '--no-sandbox',
-    '--disable-setuid-sandbox',
-    // https://github.com/GoogleChrome/puppeteer/issues/2410
-    '--font-render-hinting=none',
-  ];
+  const browser_config: puppeteer.LaunchOptions = {
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      // https://github.com/GoogleChrome/puppeteer/issues/2410
+      '--font-render-hinting=none',
+    ],
+    handleSIGINT: false,
+    handleSIGTERM: false,
+    handleSIGHUP: false,
+  };
   if (config.doku.address) {
     // Map to localhost.
-    browser_args.push(
+    browser_config.args!.push(
       `--host-resolver-rules=MAP ${baseUrl.host} ${config.doku.address}`,
     );
   }
+  if (config.render.cacheDirectory) {
+    browser_config.env = {
+      XDG_CONFIG_HOME: `${config.render.cacheDirectory}/.config`,
+      XDG_CACHE_HOME: `${config.render.cacheDirectory}/.cache`,
+    };
+  }
   var browser: puppeteer.Browser | null = null;
   try {
-    browser = await puppeteer.launch({
-      args: browser_args,
-      handleSIGINT: false,
-      handleSIGTERM: false,
-      handleSIGHUP: false,
-    });
+    browser = await puppeteer.launch(browser_config);
     onExit(() => browser?.close());
   } catch (e) {
     console.error('Failed to launch browser, rendering will not be available');
