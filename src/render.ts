@@ -96,7 +96,7 @@ export class Renderer {
         browserPage.setDefaultNavigationTimeout(300000);
 
         if (this.deviceScaleFactor) {
-          const viewport = browserPage.viewport();
+          let viewport = browserPage.viewport();
           if (viewport) {
             viewport.deviceScaleFactor = this.deviceScaleFactor;
             await browserPage.setViewport(viewport);
