@@ -89,6 +89,7 @@ export class Comicslate {
 
     this.initialized = this.scanAllComics();
     setInterval(this.scanAllComics, 10 * 60 * 1000);
+    setInterval(this.dumpStats, 10 * 60 * 1000);
   }
 
   private scanAllComics = async () => {
@@ -160,6 +161,10 @@ export class Comicslate {
     } catch (e) {
       console.error(`Comics could not be validated / cache save failure`, e);
     }
+  };
+
+  private dumpStats = async () => {
+    console.log(`Periodic stats: ${this.render.stats.toString()}`);
   };
 
   private validateAllComics = async () => {
