@@ -15,7 +15,6 @@
   },
   "render": {
     "baseDirectory": "/var/www/comicslate.org/data/media/u",
-    "cacheDirectory": "/tmp/comicsbot",
-    "deviceScaleFactor": 1
+    "cacheDirectory": "/tmp/comicsbot"
   }
 }

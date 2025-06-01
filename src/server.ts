@@ -25,7 +25,6 @@ interface Config {
   render: {
     baseDirectory: string;
     cacheDirectory?: string;
-    deviceScaleFactor?: number;
   };
 }
 
@@ -101,7 +100,6 @@ interface Config {
     '../../config/render.js',
     browser,
     config.render.baseDirectory,
-    config.render.deviceScaleFactor,
   );
 
   const comicslate = new Comicslate(
