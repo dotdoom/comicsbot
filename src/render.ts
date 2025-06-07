@@ -1,3 +1,4 @@
+import {randomUUID} from 'crypto';
 import * as mkdirp from 'mkdirp';
 import * as path from 'path';
 import * as puppeteer from 'puppeteer';
@@ -5,7 +6,7 @@ import * as sharp from 'sharp';
 import {URL} from 'url';
 
 interface RenderOptions {
-  findRect(id: string): DOMRect;
+  findRect(): DOMRect;
 }
 
 export class RendererStats {
@@ -83,10 +84,17 @@ export class Renderer {
         throw Error('Rendering disabled: browser has not been launched');
       }
 
+      const renderSessionId = randomUUID();
+      const debugLog = (msg: string) => {
+        console.log(`[${renderSessionId}] ${msg}`);
+      };
+      debugLog(`Starting render session for ${url}`);
       const render = this.loadRenderOptions();
+      debugLog(`Opening new browser page`);
       const browserPage = await this.browser.newPage();
       try {
         // Render each strip anew; client is usually local, so the cost is low.
+        debugLog(`Disabling cache`);
         await browserPage.setCacheEnabled(false);
         // Bump the default timeout of 30s to 300s (useful when we spawn a lot of
         // workers e.g. during scanning).
@@ -94,9 +102,11 @@ export class Renderer {
 
         // TODO(dotdoom): when we have 18+ control in Discord/App.
         //await browserPage.setCookie(...this.doku.getCookies());
+        debugLog(`Navigating and waiting for 0 network activity for 500ms`);
         await browserPage.goto(url.href, {waitUntil: 'networkidle0'});
 
         // @ts-ignore - doc / examples insist that this should work.
+        debugLog(`Finding page coordinates to render into strip`);
         const clip = (await browserPage.evaluate(render.findRect)) as DOMRect;
         const clipDebugString = `rect[${clip.left}, ${clip.top}; ${clip.right}, ${clip.bottom}]`;
         const renderFilename = this.renderFilename(url, baseDirectory);
@@ -108,6 +118,7 @@ export class Renderer {
         })) as Buffer;
         mkdirp.sync(path.dirname(renderFilename));
         let image = sharp(pngBuffer);
+        debugLog(`Rendering page`);
         await image
           .webp({
             nearLossless: true,
@@ -115,7 +126,9 @@ export class Renderer {
           .toFile(renderFilename);
         return renderFilename;
       } finally {
+        debugLog(`Closing browser page`);
         await browserPage.close();
+        debugLog(`Render session complete`);
       }
     });
 
