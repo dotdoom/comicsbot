@@ -62,6 +62,8 @@ export class Renderer {
 
   public readonly stats = new RenderTracker();
 
+  public inRender: boolean = false;
+
   constructor(
     renderOptionsFile: string,
     browser: puppeteer.Browser | null,
@@ -114,9 +116,23 @@ export class Renderer {
           `rendering page ${url} ${clipDebugString} into ` + renderFilename,
         );
         debugLog(`Rendering page`);
-        const pngBuffer = (await browserPage.screenshot({
-          clip: clip,
-        })) as Buffer;
+        let pngBuffer: Buffer<ArrayBufferLike>;
+
+        // Poor man's critical section implementation: taking screenshot from an
+        // inactive tab will hang forever, so make sure there's only one being
+        // active at a time (Page.screenshot() already does bringToFront).
+        while (this.inRender) {
+          await new Promise(r => setTimeout(r, 10));
+        }
+        this.inRender = true;
+        try {
+          pngBuffer = (await browserPage.screenshot({
+            clip: clip,
+          })) as Buffer;
+        } finally {
+          this.inRender = false;
+        }
+
         mkdirp.sync(path.dirname(renderFilename));
         let image = sharp(pngBuffer);
         debugLog(`Saving rendered image`);
