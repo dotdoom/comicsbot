@@ -9,7 +9,7 @@ interface RenderOptions {
   findRect(): DOMRect;
 }
 
-export class RendererStats {
+export class RenderTracker {
   private lastFailedRenderURL?: URL;
   private lastFailedRenderReason?: any;
   private numRenderRequests = 0;
@@ -60,7 +60,7 @@ export class Renderer {
   private readonly browser: puppeteer.Browser | null;
   private readonly baseDirectory: string;
 
-  public readonly stats = new RendererStats();
+  public readonly stats = new RenderTracker();
 
   constructor(
     renderOptionsFile: string,
