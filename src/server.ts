@@ -43,6 +43,11 @@ interface Config {
     handleSIGINT: false,
     handleSIGTERM: false,
     handleSIGHUP: false,
+    // Page.screenshot() times out for inactive tabs in CDP protocol:
+    // https://github.com/puppeteer/puppeteer/issues/12712
+    // Despite Page.screenshot() calling bringToFront() before rendering, a race
+    // condition may switch focus to a different tab just before render.
+    headless: 'shell',
   };
   if (config.doku.address) {
     // Map to localhost.
