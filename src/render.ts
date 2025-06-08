@@ -113,12 +113,13 @@ export class Renderer {
         console.info(
           `rendering page ${url} ${clipDebugString} into ` + renderFilename,
         );
+        debugLog(`Rendering page`);
         const pngBuffer = (await browserPage.screenshot({
           clip: clip,
         })) as Buffer;
         mkdirp.sync(path.dirname(renderFilename));
         let image = sharp(pngBuffer);
-        debugLog(`Rendering page`);
+        debugLog(`Saving rendered image`);
         await image
           .webp({
             nearLossless: true,
