@@ -15,12 +15,21 @@ export class RenderTracker {
   private numRenderRequests = 0;
   private numRenderFailures = 0;
   private inFlightRenders: URL[] = [];
+  private concurrency = 1;
 
   public recordRender = async (
     url: URL,
     render: () => Promise<any>,
   ): Promise<string> => {
     ++this.numRenderRequests;
+
+    while (
+      this.concurrency >= 0 &&
+      this.inFlightRenders.length >= this.concurrency
+    ) {
+      await new Promise(r => setTimeout(r, 10));
+    }
+
     this.inFlightRenders.push(url);
     try {
       return await render();
@@ -117,22 +126,9 @@ export class Renderer {
         );
         debugLog(`Rendering page`);
         let pngBuffer: Buffer<ArrayBufferLike>;
-
-        // Poor man's critical section implementation: taking screenshot from an
-        // inactive tab will hang forever, so make sure there's only one being
-        // active at a time (Page.screenshot() already does bringToFront).
-        while (this.inRender) {
-          await new Promise(r => setTimeout(r, 10));
-        }
-        this.inRender = true;
-        try {
-          pngBuffer = (await browserPage.screenshot({
-            clip: clip,
-          })) as Buffer;
-        } finally {
-          this.inRender = false;
-        }
-
+        pngBuffer = (await browserPage.screenshot({
+          clip: clip,
+        })) as Buffer;
         mkdirp.sync(path.dirname(renderFilename));
         let image = sharp(pngBuffer);
         debugLog(`Saving rendered image`);
