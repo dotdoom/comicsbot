@@ -43,9 +43,9 @@ interface Config {
     handleSIGINT: false,
     handleSIGTERM: false,
     handleSIGHUP: false,
-    // Page.screenshot() times out in the new mode:
+    // Page.screenshot() times out in CDP mode:
     // https://github.com/puppeteer/puppeteer/issues/12712
-    headless: 'shell',
+    protocol: 'webDriverBiDi',
   };
   if (config.doku.address) {
     // Map to localhost.
