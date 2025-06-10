@@ -43,6 +43,9 @@ interface Config {
     handleSIGINT: false,
     handleSIGTERM: false,
     handleSIGHUP: false,
+    // Page.screenshot() times out in the new mode:
+    // https://github.com/puppeteer/puppeteer/issues/12712
+    headless: 'shell',
   };
   if (config.doku.address) {
     // Map to localhost.
