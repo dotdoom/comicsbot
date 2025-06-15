@@ -45,6 +45,7 @@ interface Config {
     handleSIGHUP: false,
     // Page.screenshot() times out in CDP mode:
     // https://github.com/puppeteer/puppeteer/issues/12712
+    headless: 'shell',
     protocol: 'webDriverBiDi',
   };
   if (config.doku.address) {
