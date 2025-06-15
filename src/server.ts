@@ -33,7 +33,7 @@ interface Config {
   const baseUrl = new URL(config.doku.baseUrl);
 
   console.log('Starting browser...');
-  const browser_config: puppeteer.LaunchOptions = {
+  const browser_config: puppeteer.PuppeteerLaunchOptions = {
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
@@ -43,10 +43,6 @@ interface Config {
     handleSIGINT: false,
     handleSIGTERM: false,
     handleSIGHUP: false,
-    // Page.screenshot() times out in CDP mode:
-    // https://github.com/puppeteer/puppeteer/issues/12712
-    headless: 'shell',
-    protocol: 'webDriverBiDi',
   };
   if (config.doku.address) {
     // Map to localhost.
