@@ -56,6 +56,9 @@ interface Config {
       XDG_CACHE_HOME: `${config.render.cacheDirectory}/.cache`,
     };
   }
+  if (process.env.CHROME_EXECUTABLE_PATH) {
+    browser_config.executablePath = process.env.CHROME_EXECUTABLE_PATH;
+  }
   var browser: puppeteer.Browser | null = null;
   try {
     browser = await puppeteer.launch(browser_config);
