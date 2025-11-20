@@ -38,6 +38,7 @@ interface Config {
       '--no-sandbox',
       '--disable-setuid-sandbox',
       // https://github.com/GoogleChrome/puppeteer/issues/2410
+      '--disable-font-subpixel-positioning',
       '--font-render-hinting=none',
     ],
     handleSIGINT: false,
