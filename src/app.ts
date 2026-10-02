@@ -1,8 +1,7 @@
 import * as acceptLanguage from 'accept-language-parser';
-import * as express from 'express';
-import {Application, RequestHandler} from 'express';
-import * as moment from 'moment';
-import * as morgan from 'morgan';
+import express, {Application, RequestHandler} from 'express';
+import moment from 'moment';
+import morgan from 'morgan';
 import {Comicslate, PageId} from './comicslate';
 import {Renderer} from './render';
 
@@ -53,6 +52,7 @@ const clientLanguage = (comicslate: Comicslate): RequestHandler => {
 };
 
 // TODO(dotdoom): find a better way to inject middleware.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type JsonRequestHandler = (req: any, res: any, next: any) => any;
 
 const jsonApi = (handler: JsonRequestHandler): RequestHandler => {
@@ -76,7 +76,7 @@ const jsonApi = (handler: JsonRequestHandler): RequestHandler => {
   };
 };
 
-const errorHandler: express.ErrorRequestHandler = (err, req, res, next) => {
+const errorHandler: express.ErrorRequestHandler = (err, req, res, _next) => {
   // Put values as separate arguments, instead of string interpolation, to
   // convert them into something that can be displayed on console, and avoid
   // "Uncaught TypeError: Cannot convert object to primitive value".
@@ -212,8 +212,14 @@ export class App {
     }*/
 
   private getStrip: RequestHandler = async (req, res, next) => {
+    const comicId = Array.isArray(req.params.comicId)
+      ? req.params.comicId[0]
+      : req.params.comicId;
+    const stripId = Array.isArray(req.params.stripId)
+      ? req.params.stripId[0]
+      : req.params.stripId;
     const strip = await this.comicslate.getStrip(
-      new PageId(res.locals.language, req.params.comicId, req.params.stripId),
+      new PageId(res.locals.language, comicId, stripId),
     );
     res.setHeader(
       'X-Comicslate-Strip',
@@ -229,7 +235,7 @@ export class App {
   };
 
   private sendFile = (
-    res: express.Response<any>,
+    res: express.Response,
     path: string,
     next: express.NextFunction,
     immutable: boolean,
@@ -330,7 +336,7 @@ export class App {
     };
   };
 
-  private renderStats: RequestHandler = async (req, res) => {
+  private renderStats: RequestHandler = async (_req, _res) => {
     return {
       renderer: {
         version: await this.comicslate.render.version(),

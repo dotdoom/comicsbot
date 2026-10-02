@@ -84,7 +84,7 @@ export class Comicslate {
       this.acceptComic = path =>
         !bannedComicRegexCompiled.some(r => r.test(path));
     } else {
-      this.acceptComic = _ => true;
+      this.acceptComic = () => true;
     }
 
     this.initialized = this.scanAllComics();
@@ -159,7 +159,7 @@ export class Comicslate {
         `${numberOfValidComics} valid comics`,
       );
     } catch (e) {
-      console.error(`Comics could not be validated / cache save failure`, e);
+      console.error('Comics could not be validated / cache save failure', e);
     }
   };
 

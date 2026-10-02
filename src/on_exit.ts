@@ -11,17 +11,16 @@ export function onExit(callback: () => Promise<void> | void) {
 
   process.on('beforeExit', callbackOnce);
   for (const signal of signals) {
-    process.on(signal, async signal => {
+    process.on(signal, async () => {
       process.exitCode = 0;
       try {
         await callbackOnce();
       } finally {
-        // eslint-disable-next-line no-process-exit
         process.exit();
       }
     });
   }
   process.on('uncaughtExceptionMonitor', () => {
-    callbackOnce();
+    void callbackOnce();
   });
 }

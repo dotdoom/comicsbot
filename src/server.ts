@@ -16,6 +16,7 @@ interface Config {
     password: string;
     baseUrl: string;
     address?: string;
+    userAgent?: string;
   };
   app: {
     port: number;
@@ -33,7 +34,7 @@ interface Config {
   const baseUrl = new URL(config.doku.baseUrl);
 
   console.log('Starting browser...');
-  const browser_config: puppeteer.PuppeteerLaunchOptions = {
+  const browser_config: puppeteer.LaunchOptions = {
     args: [
       // https://github.com/GoogleChrome/puppeteer/issues/2410
       '--disable-font-subpixel-positioning',
@@ -43,6 +44,9 @@ interface Config {
     handleSIGTERM: false,
     handleSIGHUP: false,
   };
+  if (config.doku.userAgent) {
+    browser_config.args!.push(`--user-agent=${config.doku.userAgent}`);
+  }
   if (config.doku.address) {
     // Map to localhost.
     browser_config.args!.push(
@@ -58,7 +62,7 @@ interface Config {
   if (process.env.CHROME_EXECUTABLE_PATH) {
     browser_config.executablePath = process.env.CHROME_EXECUTABLE_PATH;
   }
-  var browser: puppeteer.Browser | null = null;
+  let browser: puppeteer.Browser | null = null;
   try {
     browser = await puppeteer.launch(browser_config);
     onExit(() => browser?.close());
@@ -81,13 +85,16 @@ interface Config {
       url: xmlrpcURL.href,
       cookies: true,
       headers: {
-        'User-Agent': (await browser?.userAgent()) || 'comicsbot (render off)',
+        'User-Agent':
+          (await browser?.userAgent()) ||
+          config.doku.userAgent ||
+          'comicsbot (render off)',
         Host: baseUrl.host,
       },
     }),
   );
 
-  while (1) {
+  while (true) {
     try {
       await doku.login(config.doku.user, config.doku.password);
       break;

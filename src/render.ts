@@ -2,7 +2,7 @@ import {randomUUID} from 'crypto';
 import * as mkdirp from 'mkdirp';
 import * as path from 'path';
 import * as puppeteer from 'puppeteer';
-import * as sharp from 'sharp';
+import sharp from 'sharp';
 import {URL} from 'url';
 
 interface RenderOptions {
@@ -11,7 +11,7 @@ interface RenderOptions {
 
 export class RenderTracker {
   private lastFailedRenderURL?: URL;
-  private lastFailedRenderReason?: any;
+  private lastFailedRenderReason?: unknown;
   private numRenderRequests = 0;
   private numRenderFailures = 0;
   private inFlightRenders: URL[] = [];
@@ -19,7 +19,7 @@ export class RenderTracker {
 
   public recordRender = async (
     url: URL,
-    render: () => Promise<any>,
+    render: () => Promise<string>,
   ): Promise<string> => {
     ++this.numRenderRequests;
 
@@ -44,7 +44,7 @@ export class RenderTracker {
   };
 
   public toString = (): string => {
-    if (this.numRenderRequests == 0) {
+    if (this.numRenderRequests === 0) {
       return 'No rendering took place, ever';
     }
     let summary = `${this.numRenderRequests} request(s) have been issued`;
@@ -71,7 +71,7 @@ export class Renderer {
 
   public readonly stats = new RenderTracker();
 
-  public inRender: boolean = false;
+  public inRender = false;
 
   constructor(
     renderOptionsFile: string,
@@ -91,7 +91,7 @@ export class Renderer {
     baseDirectory: string = this.baseDirectory,
   ): Promise<string> =>
     this.stats.recordRender(url, async (): Promise<string> => {
-      if (this.browser == null) {
+      if (this.browser === null) {
         throw Error('Rendering disabled: browser has not been launched');
       }
 
@@ -101,11 +101,11 @@ export class Renderer {
       };
       debugLog(`Starting render session for ${url}`);
       const render = this.loadRenderOptions();
-      debugLog(`Opening new browser page`);
+      debugLog('Opening new browser page');
       const browserPage = await this.browser.newPage();
       try {
         // Render each strip anew; client is usually local, so the cost is low.
-        debugLog(`Disabling cache`);
+        debugLog('Disabling cache');
         await browserPage.setCacheEnabled(false);
         // Bump the default timeout of 30s to 300s (useful when we spawn a lot of
         // workers e.g. during scanning).
@@ -113,25 +113,23 @@ export class Renderer {
 
         // TODO(dotdoom): when we have 18+ control in Discord/App.
         //await browserPage.setCookie(...this.doku.getCookies());
-        debugLog(`Navigating and waiting for 0 network activity for 500ms`);
+        debugLog('Navigating and waiting for 0 network activity for 500ms');
         await browserPage.goto(url.href, {waitUntil: 'networkidle0'});
 
-        // @ts-ignore - doc / examples insist that this should work.
-        debugLog(`Finding page coordinates to render into strip`);
+        debugLog('Finding page coordinates to render into strip');
         const clip = (await browserPage.evaluate(render.findRect)) as DOMRect;
         const clipDebugString = `rect[${clip.left}, ${clip.top}; ${clip.right}, ${clip.bottom}]`;
         const renderFilename = this.renderFilename(url, baseDirectory);
         console.info(
           `rendering page ${url} ${clipDebugString} into ` + renderFilename,
         );
-        debugLog(`Rendering page`);
-        let pngBuffer: Buffer<ArrayBufferLike>;
-        pngBuffer = (await browserPage.screenshot({
+        debugLog('Rendering page');
+        const pngBuffer = (await browserPage.screenshot({
           clip: clip,
         })) as Buffer;
         mkdirp.sync(path.dirname(renderFilename));
-        let image = sharp(pngBuffer);
-        debugLog(`Saving rendered image`);
+        const image = sharp(pngBuffer);
+        debugLog('Saving rendered image');
         await image
           .webp({
             nearLossless: true,
@@ -139,9 +137,9 @@ export class Renderer {
           .toFile(renderFilename);
         return renderFilename;
       } finally {
-        debugLog(`Closing browser page`);
+        debugLog('Closing browser page');
         await browserPage.close();
-        debugLog(`Render session complete`);
+        debugLog('Render session complete');
       }
     });
 
